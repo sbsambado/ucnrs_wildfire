@@ -1,0 +1,251 @@
+"","plot_name","reserve","year","month","collection_date","treatment","veg_category","veg_type","tick_density","tick_count","soil_surface_severity_mean","bare_soil_char_mean","woody_debris_mean"
+"1","ML BURN G03","McLaughlin",2022,"March","2022-03-17","Burn","Grassland","Grass",0,0,2,79,0.5
+"2","ML BURN O03","McLaughlin",2022,"March","2022-03-17","Burn","Forest","Oak",0,0,4,9.5,1.25
+"3","ML BURN O05","McLaughlin",2022,"March","2022-03-17","Burn","Forest","Oak",7.5,6,4,30,2
+"4","ML BURN O04","McLaughlin",2022,"March","2022-03-17","Burn","Forest","Oak",2.5,2,4,6,1.5
+"5","ML BURN G05","McLaughlin",2022,"March","2022-03-17","Burn","Grassland","Grass",1.25,1,4,67.5,0.25
+"6","ML BURN G04","McLaughlin",2022,"March","2022-03-17","Burn","Grassland","Grass",0,0,3,16.5,0.25
+"7","ML UNBURN O01","McLaughlin",2022,"March","2022-03-17","Unburn","Forest","Oak",2.5,2,0,2.75,1.75
+"8","ML UNBURN G02","McLaughlin",2022,"March","2022-03-17","Unburn","Grassland","Grass",0,0,0,0.75,0
+"9","ML UNBURN G01","McLaughlin",2022,"March","2022-03-17","Unburn","Grassland","Grass",0,0,0,0.25,0.5
+"10","ML UNBURN G04","McLaughlin",2022,"March","2022-03-17","Unburn","Grassland","Grass",0,0,0,1,0.25
+"11","ML UNBURN O05","McLaughlin",2022,"March","2022-03-17","Unburn","Forest","Oak",0,0,0,0.25,0.5
+"12","ML UNBURN O04","McLaughlin",2022,"March","2022-03-17","Unburn","Forest","Oak",0,0,0,1.5,2
+"13","ML UNBURN G05","McLaughlin",2022,"March","2022-03-17","Unburn","Grassland","Grass",0,0,0,6,0.25
+"14","ML UNBURN O03","McLaughlin",2022,"March","2022-03-17","Unburn","Forest","Oak",3.75,3,0,1.25,0.5
+"15","ML UNBURN G03","McLaughlin",2022,"March","2022-03-17","Unburn","Grassland","Grass",2.5,2,0,0.75,0.25
+"16","ML UNBURN O02","McLaughlin",2022,"March","2022-03-17","Unburn","Forest","Oak",6.25,5,0,0.75,4
+"17","ML BURN G01","McLaughlin",2022,"March","2022-03-17","Burn","Grassland","Grass",2.5,2,4,65,0.25
+"18","ML BURN G02","McLaughlin",2022,"March","2022-03-17","Burn","Grassland","Grass",1.25,1,3,59.5,0.5
+"19","ML BURN O01","McLaughlin",2022,"March","2022-03-17","Burn","Forest","Oak",0,0,4,74.5,4
+"20","ML BURN O02","McLaughlin",2022,"March","2022-03-17","Burn","Forest","Oak",1.25,1,4,21,4.5
+"21","QR BURN G05","Quail Ridge",2022,"March","2022-03-18","Burn","Grassland","Grass",0,0,3,74,0.5
+"22","QR BURN O05","Quail Ridge",2022,"March","2022-03-18","Burn","Forest","Oak",1.25,1,2,53.5,2
+"23","QR BURN C05","Quail Ridge",2022,"March","2022-03-18","Burn","Scrub","Chaparral ",0,0,4,60,7
+"24","QR BURN O04","Quail Ridge",2022,"March","2022-03-18","Burn","Forest","Oak",0,0,2,50,8
+"25","QR BURN C04","Quail Ridge",2022,"March","2022-03-18","Burn","Scrub","Chaparral ",0,0,4,67.5,9
+"26","QR BURN G04","Quail Ridge",2022,"March","2022-03-18","Burn","Grassland","Grass",0,0,3,47.5,0.25
+"27","QR BURN O03","Quail Ridge",2022,"March","2022-03-18","Burn","Forest","Oak",0,0,4,74.5,6.5
+"28","QR BURN G03","Quail Ridge",2022,"March","2022-03-18","Burn","Grassland","Grass",0,0,4,92,0.25
+"29","QR BURN C03","Quail Ridge",2022,"March","2022-03-18","Burn","Scrub","Chaparral ",0,0,4,95,1
+"30","QR BURN O02","Quail Ridge",2022,"March","2022-03-18","Burn","Forest","Oak",0,0,4,71,4
+"31","QR BURN C02","Quail Ridge",2022,"March","2022-03-18","Burn","Scrub","Chaparral ",1.25,1,4,79.5,6
+"32","QR BURN G02","Quail Ridge",2022,"March","2022-03-18","Burn","Grassland","Grass",0,0,3,17.5,0.25
+"33","QR BURN G01","Quail Ridge",2022,"March","2022-03-18","Burn","Grassland","Grass",0,0,3,75,1.5
+"34","QR BURN C01","Quail Ridge",2022,"March","2022-03-18","Burn","Scrub","Chaparral ",0,0,4,67.5,1.5
+"35","QR BURN O01","Quail Ridge",2022,"March","2022-03-18","Burn","Forest","Oak",0,0,4,22.5,0.5
+"36","HT UNBURN C03","Hastings",2022,"March","2022-03-20","Unburn","Scrub","Chaparral ",16.25,13,0,12.75,6.5
+"37","HT BURN C01","Hastings",2022,"March","2022-03-20","Burn","Scrub","Chaparral ",0,0,4,89.5,0.75
+"38","HT BURN G04","Hastings",2022,"March","2022-03-20","Burn","Grassland","Grass",7.5,6,3,69,0.25
+"39","HT BURN C02","Hastings",2022,"March","2022-03-20","Burn","Scrub","Chaparral ",12.5,10,4,72.5,2
+"40","HT BURN G03","Hastings",2022,"March","2022-03-20","Burn","Grassland","Grass",0,0,3,71,0.25
+"41","HT BURN G01","Hastings",2022,"March","2022-03-20","Burn","Grassland","Grass",0,0,2,60,0.25
+"42","HT BURN G02","Hastings",2022,"March","2022-03-20","Burn","Grassland","Grass",1.25,1,4,50,0
+"43","HT BURN O01","Hastings",2022,"March","2022-03-20","Burn","Forest","Oak",1.25,1,2,7,1.5
+"44","HT BURN O02","Hastings",2022,"March","2022-03-20","Burn","Forest","Oak",2.5,2,3,21,0.75
+"45","HT BURN O04","Hastings",2022,"March","2022-03-20","Burn","Forest","Oak",3.75,3,3,16,1.25
+"46","HT BURN O03","Hastings",2022,"March","2022-03-20","Burn","Forest","Oak",0,0,3,37.5,0.75
+"47","HT BURN O05","Hastings",2022,"March","2022-03-20","Burn","Forest","Oak",1.25,1,3,48.5,3.5
+"48","HT BURN C03","Hastings",2022,"March","2022-03-20","Burn","Scrub","Chaparral ",8.75,7,2,81,3
+"49","HT BURN G05","Hastings",2022,"March","2022-03-20","Burn","Grassland","Grass",0,0,3,74.5,0
+"50","HT UNBURN G04","Hastings",2022,"March","2022-03-20","Unburn","Grassland","Grass",8.75,7,0,2.25,0
+"51","HT UNBURN G03","Hastings",2022,"March","2022-03-20","Unburn","Grassland","Grass",5,4,0,0.5,0
+"52","HT UNBURN G05","Hastings",2022,"March","2022-03-21","Unburn","Grassland","Grass",0,0,0,0.5,0.25
+"53","HT UNBURN C05","Hastings",2022,"March","2022-03-21","Unburn","Scrub","Chaparral ",5,4,0,17.5,11.5
+"54","HT BURN C04","Hastings",2022,"March","2022-03-21","Burn","Scrub","Chaparral ",1.25,1,4,85.5,2
+"55","HT BURN C05","Hastings",2022,"March","2022-03-21","Burn","Scrub","Chaparral ",0,0,4,83.5,0.5
+"56","HT UNBURN O05","Hastings",2022,"March","2022-03-21","Unburn","Forest","Oak",1.25,1,0,3,1.25
+"57","HT UNBURN G02","Hastings",2022,"March","2022-03-21","Unburn","Grassland","Grass",0,0,0,8.5,0.25
+"58","HT UNBURN G01","Hastings",2022,"March","2022-03-21","Unburn","Grassland","Grass",0,0,0,19.5,2.75
+"59","HT UNBURN C04","Hastings",2022,"March","2022-03-21","Unburn","Scrub","Chaparral ",17.5,14,0,21.5,11.5
+"60","HT UNBURN C01","Hastings",2022,"March","2022-03-21","Unburn","Scrub","Chaparral ",0,0,0,10,12
+"61","HT UNBURN C02","Hastings",2022,"March","2022-03-21","Unburn","Scrub","Chaparral ",2.5,2,0,29,17.5
+"62","HT UNBURN O04","Hastings",2022,"March","2022-03-21","Unburn","Forest","Oak",3.75,3,0,8,15.5
+"63","HT UNBURN O03","Hastings",2022,"March","2022-03-21","Unburn","Forest","Oak",3.75,3,0,4,0.75
+"64","HT UNBURN O02","Hastings",2022,"March","2022-03-21","Unburn","Forest","Oak",3.75,3,0,5.5,2.25
+"65","HT UNBURN O01","Hastings",2022,"March","2022-03-21","Unburn","Forest","Oak",1.25,1,0,0.75,3.5
+"66","BC BURN S01","Big Creek",2022,"March","2022-03-22","Burn","Scrub","Scrub",1.25,1,4,59.5,8.5
+"67","BC BURN R03","Big Creek",2022,"March","2022-03-22","Burn","Forest","Redwood",0,0,4,6.5,9.5
+"68","BC BURN S02","Big Creek",2022,"March","2022-03-22","Burn","Scrub","Scrub",0,0,4,62,4
+"69","BC BURN R01","Big Creek",2022,"March","2022-03-22","Burn","Forest","Redwood",0,0,4,7,9.5
+"70","BC BURN R02","Big Creek",2022,"March","2022-03-22","Burn","Forest","Redwood",0,0,4,13.5,22.5
+"71","BC UNBURN S02","Big Creek",2022,"March","2022-03-22","Unburn","Scrub","Scrub",0,0,0,11,14.5
+"72","BC UNBURN S03","Big Creek",2022,"March","2022-03-22","Unburn","Scrub","Scrub",0,0,0,15,17
+"73","BC UNBURN S01","Big Creek",2022,"March","2022-03-22","Unburn","Scrub","Scrub",0,0,0,19.5,10
+"74","BC UNBURN R02","Big Creek",2022,"March","2022-03-22","Unburn","Forest","Redwood",16.25,13,0,0.5,8.5
+"75","BC BURN S03","Big Creek",2022,"March","2022-03-22","Burn","Scrub","Scrub",0,0,4,50.5,7.5
+"76","BC BURN S04","Big Creek",2022,"March","2022-03-22","Burn","Scrub","Scrub",0,0,4,53.5,13
+"77","BC BURN S05","Big Creek",2022,"March","2022-03-22","Burn","Scrub","Scrub",5,4,4,22.5,3.5
+"78","BC BURN R04","Big Creek",2022,"March","2022-03-22","Burn","Forest","Redwood",0,0,3,3,7.5
+"79","BC BURN R05","Big Creek",2022,"March","2022-03-22","Burn","Forest","Redwood",0,0,3,0,5
+"80","BC UNBURN S04","Big Creek",2022,"March","2022-03-22","Unburn","Scrub","Scrub",0,0,0,4.25,27.5
+"81","BC UNBURN S05","Big Creek",2022,"March","2022-03-22","Unburn","Scrub","Scrub",1.25,1,0,3.25,27.5
+"82","BC BURN G01","Big Creek",2022,"March","2022-03-22","Burn","Grassland","Grass",0,0,3,68,0.25
+"83","BC BURN G02","Big Creek",2022,"March","2022-03-22","Burn","Grassland","Grass",1.25,1,3,68.5,0.25
+"84","BC BURN G03","Big Creek",2022,"March","2022-03-22","Burn","Grassland","Grass",0,0,3,67.5,0.75
+"85","BC BURN G04","Big Creek",2022,"March","2022-03-22","Burn","Grassland","Grass",1.25,1,3,25,0.25
+"86","BC BURN G05","Big Creek",2022,"March","2022-03-22","Burn","Grassland","Grass",0,0,2,52.5,0.25
+"87","BC UNBURN R01","Big Creek",2022,"March","2022-03-22","Unburn","Forest","Redwood",2.5,2,0,1.25,7.5
+"88","BC UNBURN R03","Big Creek",2022,"March","2022-03-22","Unburn","Forest","Redwood",0,0,0,16,12.5
+"89","ML BURN O05","McLaughlin",2022,"April","2022-04-07","Burn","Forest","Oak",3.75,3,4,30,2
+"90","ML BURN O04","McLaughlin",2022,"April","2022-04-07","Burn","Forest","Oak",2.5,2,4,6,1.5
+"91","ML BURN G05","McLaughlin",2022,"April","2022-04-07","Burn","Grassland","Grass",0,0,4,67.5,0.25
+"92","ML BURN O03","McLaughlin",2022,"April","2022-04-07","Burn","Forest","Oak",1.25,1,4,9.5,1.25
+"93","ML BURN G03","McLaughlin",2022,"April","2022-04-07","Burn","Grassland","Grass",0,0,2,79,0.5
+"94","ML BURN G04","McLaughlin",2022,"April","2022-04-07","Burn","Grassland","Grass",0,0,3,16.5,0.25
+"95","ML UNBURN O01","McLaughlin",2022,"April","2022-04-07","Unburn","Forest","Oak",1.25,1,0,2.75,1.75
+"96","ML UNBURN G02","McLaughlin",2022,"April","2022-04-07","Unburn","Grassland","Grass",0,0,0,0.75,0
+"97","ML UNBURN G01","McLaughlin",2022,"April","2022-04-07","Unburn","Grassland","Grass",0,0,0,0.25,0.5
+"98","ML UNBURN G04","McLaughlin",2022,"April","2022-04-07","Unburn","Grassland","Grass",0,0,0,1,0.25
+"99","ML UNBURN G05","McLaughlin",2022,"April","2022-04-07","Unburn","Grassland","Grass",0,0,0,6,0.25
+"100","ML UNBURN O05","McLaughlin",2022,"April","2022-04-07","Unburn","Forest","Oak",0,0,0,0.25,0.5
+"101","ML UNBURN O04","McLaughlin",2022,"April","2022-04-07","Unburn","Forest","Oak",0,0,0,1.5,2
+"102","ML UNBURN O03","McLaughlin",2022,"April","2022-04-07","Unburn","Forest","Oak",6.25,5,0,1.25,0.5
+"103","ML UNBURN G03","McLaughlin",2022,"April","2022-04-07","Unburn","Grassland","Grass",2.5,2,0,0.75,0.25
+"104","ML UNBURN O02","McLaughlin",2022,"April","2022-04-07","Unburn","Forest","Oak",1.25,1,0,0.75,4
+"105","ML BURN G01","McLaughlin",2022,"April","2022-04-07","Burn","Grassland","Grass",1.25,1,4,65,0.25
+"106","ML BURN G02","McLaughlin",2022,"April","2022-04-07","Burn","Grassland","Grass",0,0,3,59.5,0.5
+"107","ML BURN O01","McLaughlin",2022,"April","2022-04-07","Burn","Forest","Oak",0,0,4,74.5,4
+"108","ML BURN O02","McLaughlin",2022,"April","2022-04-07","Burn","Forest","Oak",0,0,4,21,4.5
+"109","QR BURN G05","Quail Ridge",2022,"April","2022-04-08","Burn","Grassland","Grass",0,0,3,74,0.5
+"110","QR BURN O05","Quail Ridge",2022,"April","2022-04-08","Burn","Forest","Oak",0,0,2,53.5,2
+"111","QR BURN C05","Quail Ridge",2022,"April","2022-04-08","Burn","Scrub","Chaparral ",0,0,4,60,7
+"112","QR BURN O04","Quail Ridge",2022,"April","2022-04-08","Burn","Forest","Oak",0,0,2,50,8
+"113","QR BURN C04","Quail Ridge",2022,"April","2022-04-08","Burn","Scrub","Chaparral ",0,0,4,67.5,9
+"114","QR BURN G04","Quail Ridge",2022,"April","2022-04-08","Burn","Grassland","Grass",0,0,3,47.5,0.25
+"115","QR BURN O03","Quail Ridge",2022,"April","2022-04-08","Burn","Forest","Oak",0,0,4,74.5,6.5
+"116","QR BURN G03","Quail Ridge",2022,"April","2022-04-08","Burn","Grassland","Grass",0,0,4,92,0.25
+"117","QR BURN C03","Quail Ridge",2022,"April","2022-04-08","Burn","Scrub","Chaparral ",0,0,4,95,1
+"118","QR BURN O02","Quail Ridge",2022,"April","2022-04-08","Burn","Forest","Oak",0,0,4,71,4
+"119","QR BURN C02","Quail Ridge",2022,"April","2022-04-08","Burn","Scrub","Chaparral ",0,0,4,79.5,6
+"120","QR BURN G02","Quail Ridge",2022,"April","2022-04-08","Burn","Grassland","Grass",0,0,3,17.5,0.25
+"121","QR BURN O01","Quail Ridge",2022,"April","2022-04-08","Burn","Forest","Oak",0,0,4,22.5,0.5
+"122","QR BURN C01","Quail Ridge",2022,"April","2022-04-08","Burn","Scrub","Chaparral ",0,0,4,67.5,1.5
+"123","QR BURN G01","Quail Ridge",2022,"April","2022-04-08","Burn","Grassland","Grass",0,0,3,75,1.5
+"124","HT BURN G04","Hastings",2022,"April","2022-04-09","Burn","Grassland","Grass",0,0,3,69,0.25
+"125","HT BURN G02","Hastings",2022,"April","2022-04-09","Burn","Grassland","Grass",3.75,3,4,50,0
+"126","HT BURN G01","Hastings",2022,"April","2022-04-09","Burn","Grassland","Grass",3.75,3,2,60,0.25
+"127","HT BURN O01","Hastings",2022,"April","2022-04-09","Burn","Forest","Oak",5,4,2,7,1.5
+"128","HT BURN O02","Hastings",2022,"April","2022-04-09","Burn","Forest","Oak",1.25,1,3,21,0.75
+"129","HT BURN O04","Hastings",2022,"April","2022-04-09","Burn","Forest","Oak",3.75,3,3,16,1.25
+"130","HT BURN O03","Hastings",2022,"April","2022-04-09","Burn","Forest","Oak",0,0,3,37.5,0.75
+"131","HT BURN G03","Hastings",2022,"April","2022-04-09","Burn","Grassland","Grass",0,0,3,71,0.25
+"132","HT BURN C02","Hastings",2022,"April","2022-04-09","Burn","Scrub","Chaparral ",0,0,4,72.5,2
+"133","HT BURN O05","Hastings",2022,"April","2022-04-09","Burn","Forest","Oak",1.25,1,3,48.5,3.5
+"134","HT BURN C01","Hastings",2022,"April","2022-04-09","Burn","Scrub","Chaparral ",0,0,4,89.5,0.75
+"135","HT BURN C03","Hastings",2022,"April","2022-04-09","Burn","Scrub","Chaparral ",0,0,2,81,3
+"136","HT UNBURN C03","Hastings",2022,"April","2022-04-09","Unburn","Scrub","Chaparral ",8.75,7,0,12.75,6.5
+"137","HT BURN G05","Hastings",2022,"April","2022-04-09","Burn","Grassland","Grass",0,0,3,74.5,0
+"138","HT UNBURN O03","Hastings",2022,"April","2022-04-09","Unburn","Forest","Oak",11.25,9,0,4,0.75
+"139","HT UNBURN O02","Hastings",2022,"April","2022-04-09","Unburn","Forest","Oak",6.25,5,0,5.5,2.25
+"140","HT UNBURN O01","Hastings",2022,"April","2022-04-09","Unburn","Forest","Oak",7.5,6,0,0.75,3.5
+"141","HT UNBURN G04","Hastings",2022,"April","2022-04-09","Unburn","Grassland","Grass",1.25,1,0,2.25,0
+"142","HT UNBURN G03","Hastings",2022,"April","2022-04-09","Unburn","Grassland","Grass",1.25,1,0,0.5,0
+"143","HT UNBURN G05","Hastings",2022,"April","2022-04-10","Unburn","Grassland","Grass",0,0,0,0.5,0.25
+"144","HT UNBURN C05","Hastings",2022,"April","2022-04-10","Unburn","Scrub","Chaparral ",2.5,2,0,17.5,11.5
+"145","HT BURN C04","Hastings",2022,"April","2022-04-10","Burn","Scrub","Chaparral ",0,0,4,85.5,2
+"146","HT BURN C05","Hastings",2022,"April","2022-04-10","Burn","Scrub","Chaparral ",0,0,4,83.5,0.5
+"147","HT UNBURN O05","Hastings",2022,"April","2022-04-10","Unburn","Forest","Oak",1.25,1,0,3,1.25
+"148","HT UNBURN G02","Hastings",2022,"April","2022-04-10","Unburn","Grassland","Grass",0,0,0,8.5,0.25
+"149","HT UNBURN G01","Hastings",2022,"April","2022-04-10","Unburn","Grassland","Grass",0,0,0,19.5,2.75
+"150","HT UNBURN C04","Hastings",2022,"April","2022-04-10","Unburn","Scrub","Chaparral ",21.25,17,0,21.5,11.5
+"151","HT UNBURN C01","Hastings",2022,"April","2022-04-10","Unburn","Scrub","Chaparral ",1.25,1,0,10,12
+"152","HT UNBURN C02","Hastings",2022,"April","2022-04-10","Unburn","Scrub","Chaparral ",27.5,22,0,29,17.5
+"153","HT UNBURN O04","Hastings",2022,"April","2022-04-10","Unburn","Forest","Oak",30,24,0,8,15.5
+"154","BC BURN G05","Big Creek",2022,"April","2022-04-11","Burn","Grassland","Grass",0,0,2,52.5,0.25
+"155","BC BURN G04","Big Creek",2022,"April","2022-04-11","Burn","Grassland","Grass",1.25,1,3,25,0.25
+"156","BC BURN G03","Big Creek",2022,"April","2022-04-11","Burn","Grassland","Grass",0,0,3,67.5,0.75
+"157","BC BURN G02","Big Creek",2022,"April","2022-04-11","Burn","Grassland","Grass",0,0,3,68.5,0.25
+"158","BC BURN G01","Big Creek",2022,"April","2022-04-11","Burn","Grassland","Grass",0,0,3,68,0.25
+"159","BC UNBURN S05","Big Creek",2022,"April","2022-04-11","Unburn","Scrub","Scrub",0,0,0,3.25,27.5
+"160","BC UNBURN S04","Big Creek",2022,"April","2022-04-11","Unburn","Scrub","Scrub",0,0,0,4.25,27.5
+"161","BC BURN R05","Big Creek",2022,"April","2022-04-11","Burn","Forest","Redwood",0,0,3,0,5
+"162","BC BURN R04","Big Creek",2022,"April","2022-04-11","Burn","Forest","Redwood",0,0,3,3,7.5
+"163","BC BURN S05","Big Creek",2022,"April","2022-04-11","Burn","Scrub","Scrub",0,0,4,22.5,3.5
+"164","BC BURN S04","Big Creek",2022,"April","2022-04-11","Burn","Scrub","Scrub",0,0,4,53.5,13
+"165","BC BURN S03","Big Creek",2022,"April","2022-04-11","Burn","Scrub","Scrub",3.75,3,4,50.5,7.5
+"166","BC BURN R03","Big Creek",2022,"April","2022-04-11","Burn","Forest","Redwood",1.25,1,4,6.5,9.5
+"167","BC UNBURN R01","Big Creek",2022,"April","2022-04-11","Unburn","Forest","Redwood",2.5,2,0,1.25,7.5
+"168","BC BURN S01","Big Creek",2022,"April","2022-04-11","Burn","Scrub","Scrub",0,0,4,59.5,8.5
+"169","BC BURN R03","Big Creek",2022,"April","2022-04-11","Burn","Forest","Redwood",0,0,4,6.5,9.5
+"170","BC BURN S02","Big Creek",2022,"April","2022-04-11","Burn","Scrub","Scrub",0,0,4,62,4
+"171","BC BURN R01","Big Creek",2022,"April","2022-04-11","Burn","Forest","Redwood",0,0,4,7,9.5
+"172","BC BURN R02","Big Creek",2022,"April","2022-04-11","Burn","Forest","Redwood",0,0,4,13.5,22.5
+"173","BC UNBURN R02","Big Creek",2022,"April","2022-04-11","Unburn","Forest","Redwood",2.5,2,0,0.5,8.5
+"174","BC UNBURN S03","Big Creek",2022,"April","2022-04-11","Unburn","Scrub","Scrub",0,0,0,15,17
+"175","BC UNBURN S01","Big Creek",2022,"April","2022-04-11","Unburn","Scrub","Scrub",0,0,0,19.5,10
+"176","ML BURN G01","McLaughlin",2021,"April","2021-04-07","Burn","Forest","Grass",2.5,2,4,65,0.25
+"177","ML BURN G02","McLaughlin",2021,"April","2021-04-07","Burn","Grassland","Grass",6.25,5,3,59.5,0.5
+"178","ML BURN O01","McLaughlin",2021,"April","2021-04-07","Burn","Forest","Oak",7.5,6,4,74.5,4
+"179","ML BURN O02","McLaughlin",2021,"April","2021-04-07","Burn","Forest","Oak",3.75,3,4,21,4.5
+"180","ML UNBURN G03","McLaughlin",2021,"April","2021-04-07","Unburn","Grassland","Grass",7.5,6,0,0.75,0.25
+"181","ML UNBURN G04","McLaughlin",2021,"April","2021-04-07","Unburn","Grassland","Grass",0,0,0,1,0.25
+"182","ML UNBURN O02","McLaughlin",2021,"April","2021-04-07","Unburn","Forest","Oak",15,12,0,0.75,4
+"183","ML UNBURN O03","McLaughlin",2021,"April","2021-04-07","Unburn","Forest","Oak",8.75,7,0,1.25,0.5
+"184","HT BURN G04","Hastings",2021,"April","2021-04-10","Burn","Grassland","Grass",5,4,3,69,0.25
+"185","HT BURN G02","Hastings",2021,"April","2021-04-10","Burn","Grassland","Grass",3.75,3,4,50,0
+"186","HT BURN O01","Hastings",2021,"April","2021-04-10","Burn","Forest","Oak",7.5,6,2,7,1.5
+"187","HT BURN O04","Hastings",2021,"April","2021-04-10","Burn","Forest","Oak",5,4,3,16,1.25
+"188","HT UNBURN O01","Hastings",2021,"April","2021-04-10","Unburn","Forest","Oak",0,0,0,0.75,3.5
+"189","HT UNBURN O02","Hastings",2021,"April","2021-04-10","Unburn","Forest","Oak",6.25,5,0,5.5,2.25
+"190","HT UNBURN G04","Hastings",2021,"April","2021-04-10","Unburn","Grassland","Grass",3.75,3,0,2.25,0
+"191","HT UNBURN G03","Hastings",2021,"April","2021-04-10","Unburn","Grassland","Grass",36.25,29,0,0.5,0
+"192","BC UNBURN R02","Big Creek",2021,"April","2021-04-12","Unburn","Forest","Redwood",5,4,0,0.5,8.5
+"193","BC UNBURN S02","Big Creek",2021,"April","2021-04-12","Unburn","Scrub","Scrub",2.5,2,0,11,14.5
+"194","BC UNBURN R01","Big Creek",2021,"April","2021-04-12","Unburn","Forest","Redwood",0,0,0,1.25,7.5
+"195","BC BURN S02","Big Creek",2021,"April","2021-04-12","Burn","Scrub","Scrub",0,0,4,62,4
+"196","BC BURN R03","Big Creek",2021,"April","2021-04-12","Burn","Forest","Redwood",0,0,4,6.5,9.5
+"197","BC BURN S01","Big Creek",2021,"April","2021-04-12","Burn","Scrub","Scrub",0,0,4,59.5,8.5
+"198","ML BURN G01","McLaughlin",2021,"May","2021-05-05","Burn","Grassland","Grass",2.5,2,4,65,0.25
+"199","ML BURN G02","McLaughlin",2021,"May","2021-05-05","Burn","Grassland","Grass",1.25,1,3,59.5,0.5
+"200","ML BURN O01","McLaughlin",2021,"May","2021-05-05","Burn","Forest","Oak",2.5,2,4,74.5,4
+"201","ML BURN O02","McLaughlin",2021,"May","2021-05-05","Burn","Forest","Oak",0,0,4,21,4.5
+"202","ML UNBURN O03","McLaughlin",2021,"May","2021-05-05","Unburn","Forest","Oak",8.75,7,0,1.25,0.5
+"203","ML UNBURN G03","McLaughlin",2021,"May","2021-05-05","Unburn","Grassland","Grass",0,0,0,0.75,0.25
+"204","ML UNBURN O02","McLaughlin",2021,"May","2021-05-05","Unburn","Forest","Oak",27.5,22,0,0.75,4
+"205","ML UNBURN G04","McLaughlin",2021,"May","2021-05-05","Unburn","Grassland","Grass",2.5,2,0,1,0.25
+"206","HT BURN G04","Hastings",2021,"May","2021-05-09","Burn","Grassland","Grass",0,0,3,69,0.25
+"207","HT BURN G02","Hastings",2021,"May","2021-05-09","Burn","Grassland","Grass",0,0,4,50,0
+"208","HT BURN O01","Hastings",2021,"May","2021-05-09","Burn","Forest","Oak",1.25,1,2,7,1.5
+"209","HT BURN O04","Hastings",2021,"May","2021-05-09","Burn","Forest","Oak",0,0,3,16,1.25
+"210","HT UNBURN O02","Hastings",2021,"May","2021-05-09","Unburn","Forest","Oak",1.25,1,0,5.5,2.25
+"211","HT UNBURN O01","Hastings",2021,"May","2021-05-09","Unburn","Forest","Oak",0,0,0,0.75,3.5
+"212","HT UNBURN G04","Hastings",2021,"May","2021-05-09","Unburn","Grassland","Grass",5,4,0,2.25,0
+"213","HT UNBURN G03","Hastings",2021,"May","2021-05-09","Unburn","Grassland","Grass",6.25,5,0,0.5,0
+"214","BC UNBURN R02","Big Creek",2021,"May","2021-05-10","Unburn","Forest","Redwood",10,8,0,0.5,8.5
+"215","BC UNBURN S03","Big Creek",2021,"May","2021-05-10","Unburn","Scrub","Scrub",7.5,6,0,15,17
+"216","BC UNBURN S02","Big Creek",2021,"May","2021-05-10","Unburn","Scrub","Scrub",3.75,3,0,11,14.5
+"217","BC BURN R01","Big Creek",2021,"May","2021-05-10","Burn","Forest","Redwood",0,0,4,7,9.5
+"218","BC BURN S02","Big Creek",2021,"May","2021-05-10","Burn","Scrub","Scrub",0,0,4,62,4
+"219","BC BURN R03","Big Creek",2021,"May","2021-05-10","Burn","Forest","Redwood",0,0,4,6.5,9.5
+"220","BC BURN S01","Big Creek",2021,"May","2021-05-10","Burn","Scrub","Scrub",0,0,4,59.5,8.5
+"221","ML UNBURN G04","McLaughlin",2021,"June","2021-06-02","Unburn","Grassland","Grass",0,0,0,1,0.25
+"222","ML BURN G01","McLaughlin",2021,"June","2021-06-02","Burn","Grassland","Grass",0,0,4,65,0.25
+"223","ML BURN G02","McLaughlin",2021,"June","2021-06-02","Burn","Grassland","Grass",0,0,3,59.5,0.5
+"224","ML BURN O01","McLaughlin",2021,"June","2021-06-02","Burn","Forest","Oak",1.25,1,4,74.5,4
+"225","ML BURN O02","McLaughlin",2021,"June","2021-06-02","Burn","Forest","Oak",0,0,4,21,4.5
+"226","ML UNBURN O02","McLaughlin",2021,"June","2021-06-02","Unburn","Forest","Oak",0,0,0,0.75,4
+"227","ML UNBURN G03","McLaughlin",2021,"June","2021-06-02","Unburn","Grassland","Grass",0,0,0,0.75,0.25
+"228","ML UNBURN O03","McLaughlin",2021,"June","2021-06-02","Unburn","Forest","Oak",0,0,0,1.25,0.5
+"229","HT BURN G04","Hastings",2021,"June","2021-06-06","Burn","Grassland","Grass",0,0,3,69,0.25
+"230","HT BURN G02","Hastings",2021,"June","2021-06-06","Burn","Grassland","Grass",0,0,4,50,0
+"231","HT BURN O01","Hastings",2021,"June","2021-06-06","Burn","Forest","Oak",0,0,2,7,1.5
+"232","HT BURN O04","Hastings",2021,"June","2021-06-06","Burn","Forest","Oak",0,0,3,16,1.25
+"233","HT UNBURN O02","Hastings",2021,"June","2021-06-06","Unburn","Forest","Oak",0,0,0,5.5,2.25
+"234","HT UNBURN O01","Hastings",2021,"June","2021-06-06","Unburn","Forest","Oak",0,0,0,0.75,3.5
+"235","HT UNBURN G04","Hastings",2021,"June","2021-06-06","Unburn","Grassland","Grass",0,0,0,2.25,0
+"236","HT UNBURN G03","Hastings",2021,"June","2021-06-06","Unburn","Grassland","Grass",0,0,0,0.5,0
+"237","BC UNBURN R02","Big Creek",2021,"June","2021-06-07","Unburn","Forest","Redwood",7.5,6,0,0.5,8.5
+"238","BC UNBURN S03","Big Creek",2021,"June","2021-06-07","Unburn","Scrub","Scrub",5,4,0,15,17
+"239","BC UNBURN S02","Big Creek",2021,"June","2021-06-07","Unburn","Scrub","Scrub",0,0,0,11,14.5
+"240","BC BURN R01","Big Creek",2021,"June","2021-06-07","Burn","Forest","Redwood",0,0,4,7,9.5
+"241","BC BURN S02","Big Creek",2021,"June","2021-06-07","Burn","Scrub","Scrub",0,0,4,62,4
+"242","BC BURN R03","Big Creek",2021,"June","2021-06-07","Burn","Forest","Redwood",0,0,4,6.5,9.5
+"243","BC BURN S01","Big Creek",2021,"June","2021-06-07","Burn","Scrub","Scrub",0,0,4,59.5,8.5
+"244","BC UNBURN R01","Big Creek",2021,"June","2021-06-07","Unburn","Forest","Redwood",0,0,0,1.25,7.5
+"245","QR BURN G01","Quail Ridge",2021,"May","2021-05-06","Burn","Grassland","Grass",0,0,3,75,1.5
+"246","QR BURN G02","Quail Ridge",2021,"May","2021-05-06","Burn","Grassland","Grass",0,0,3,17.5,0.25
+"247","QR BURN G03","Quail Ridge",2021,"May","2021-05-06","Burn","Grassland","Grass",0,0,4,92,0.25
+"248","QR BURN O01","Quail Ridge",2021,"May","2021-05-06","Burn","Forest","Oak",0,0,4,22.5,0.5
+"249","QR BURN O02","Quail Ridge",2021,"May","2021-05-06","Burn","Forest","Oak",0,0,4,71,4
+"250","QR BURN O03","Quail Ridge",2021,"May","2021-05-06","Burn","Forest","Oak",0,0,4,74.5,6.5
