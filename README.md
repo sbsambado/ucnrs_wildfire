@@ -1,6 +1,6 @@
 *Manuscript in revisions*
 
-Wildfire disturbances and ecological cascades: teasing apart the direct and indirect effects of fire severity on tick populations
+Wildfire disturbances and ecological cascades: teasing apart the direct and indirect effects of fire on tick populations
 
 Authors: S Sambado*, G Dayton, K Zilliacus, S Dewees, A J MacDonald & C J Briggs
 
