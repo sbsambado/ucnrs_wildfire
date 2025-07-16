@@ -1,0 +1,971 @@
+---
+title: "UCNRS Wildfire Data Cleaning"
+output: html_document
+date: "2025-07-16"
+---
+
+#Journal
+Journal of Applied Ecology 
+
+#Title
+Wildfire disturbance and ecological cascades: teasing apart the direct and indirect effects of fire on tick populations
+
+#Corresponding Author
+Samantha Sambado (she/her) - sbsambado@ucsb.edu or ssambado@stanford.edu
+
+
+##Data cleaning for covariates
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+## upload necessary packages
+library(readr)
+library(tidyverse)
+library(rnaturalearth)
+library(sf)
+library(raster)
+library(stringr)
+library(purrr)
+
+## upload necessary data
+# (some datafiles will be read in via a function and may not be listed here)
+# plot information
+plot_coords <- read.csv(file = "data/plotcoords_20250715.csv") %>% dplyr::select(-X)
+
+plots_sf <- plot_coords %>% 
+    st_as_sf(coords = c("longitude", "latitude"), crs = 4326) # for spatial applications
+
+```
+
+#Landscape variables
+
+##Total % of reserve burned
+```{r}
+
+## step 1. create function to read in, align & calculate % burned
+calc_percentburn <- function(fire_path, reserve_path) {
+  
+  # read in shp files
+  fire <- st_read(fire_path, quiet = TRUE)
+  reserve <- st_read(reserve_path, quiet = TRUE)
+  
+  # reproject fire shp files to match reserve crs
+  fire <- st_transform(fire, st_crs(reserve))
+  
+  # calculate intersection between two shp files
+  intersection <- st_intersection(fire, reserve)
+  
+  # sum interaction areas
+  reserve_area <- sum(st_area(reserve))
+  intersection_area <- sum(st_area(intersection))
+  
+  # calculate % burned
+  percent_burned <- (intersection_area/ reserve_area)*100
+  
+  return(percent_burned)
+  
+}
+
+
+## step 2. write out file paths
+# match fire perimeter with reserve
+fires <- list(ml = "data/shapefiles/fireperimeter/CaliforniaFirePerimeters_HENESSEY.geojson",
+              qr = "data/shapefiles/fireperimeter/CaliforniaFirePerimeters_HENESSEY.geojson",
+              ht = "data/shapefiles/fireperimeter/CaliforniaFirePerimeters_RIVER.geojson",
+              bc = "data/shapefiles/fireperimeter/CaliforniaFirePerimeters_DOLAN.geojson")
+
+# use boundary shp file for reserves (not parcel from UCNRS GIS)
+reserves <- list(ml = "data/shapefiles/reserves/mclaughlin/McLaughlin_Boundary.shp",
+                 qr = "data/shapefiles/reserves/quailridge/Quail_Ridge_Boundary.shp",
+                 ht = "data/shapefiles/reserves/hastings/Hastings_Boundary.shp",
+                 bc = "data/shapefiles/reserves/bigcreek/Landels_Hill_Big_Creek_Boundary.shp")
+
+
+## step 3. run function to calculate % burned
+calc_percentburn_results <- sapply(names(reserves), function(name){
+  calc_percentburn(fires[[name]], reserves[[name]])
+})
+
+## step 4. make a flat file to save
+data.frame(reserve = names(calc_percentburn_results),
+           reserve_percentburn = as.numeric(calc_percentburn_results)) %>% 
+  mutate(reserve = c("McLaughlin", "Quail Ridge", "Hastings", "Big Creek")) %>% 
+  write.csv(file = "data/landscape_percentburned_20250715.csv",row.names = FALSE)
+
+```
+
+##Distance from plot to fire perimeter
+```{r}
+## step 1. read in fire perimeters
+hen_fire_shp <- st_read("data/shapefiles/fireperimeter/hen_fire.shp", quiet = TRUE)
+river_fire_shp <- st_read("data/shapefiles/fireperimeter/river_fire.shp", quiet = TRUE)
+dolan_fire_shp <- st_read("data/shapefiles/fireperimeter/dolan_fire.shp", quiet = TRUE)
+
+## step 2. create function to calculate distance
+calc_disttofire <- function(reserve_shp, fire_shp, unburn_fix = FALSE) {
+  
+  ## make spatial dataframe
+  plots_sf <- plot_coords %>% 
+    st_as_sf(coords = c("longitude", "latitude"), crs = 4326)
+  
+  ## transform to crs to utm that uses meters instead of degrees
+  plots_utm <- sf::st_transform(plots_sf, crs = 32610)
+  fire_utm <- sf::st_transform(fire_shp, crs = 32610)
+  
+  ## cast fire ploygons to MULTILINESTRING (fire perimeter lines)
+  # see https://github.com/r-spatial/sf/issues/1290 for why we do this
+  fire_perimeter <- st_cast(fire_utm, to = "MULTILINESTRING")
+  
+  ## calculate distance to fire perimeter
+  dist <- st_distance(plots_utm ,fire_perimeter) # maybe try fire_utm instead
+  plots_sf$distance_to_perim <- as.numeric(dist)
+  
+  ## fix unburned plots for big creek
+  # dolan fire shp says all of BC burned, but that's not true for the unburned plots i sampled, they're close tho
+  calc_disttofire_results <- plots_sf %>% 
+    st_drop_geometry()
+  
+  if(unburn_fix) {
+    calc_disttofire_results <- calc_disttofire_results %>% 
+      mutate(dist_to_perim = case_when(
+        grepl("UNBURN", plot_name) & dist_to_perim < 0.1 ~ 10,
+        TRUE ~ dist_to_perim
+      ))
+  }
+  
+  return(calc_disttofire_results)
+  
+}
+
+## step 3. apply function to calculate distance
+ml_dist <- calc_disttofire("McLaughlin", hen_fire_shp) %>% filter(reserve == "McLaughlin")
+qr_dist <- calc_disttofire("Quail Ridge", hen_fire_shp) %>% filter(reserve == "Quail Ridge")
+ht_dist <- calc_disttofire("Hastings", river_fire_shp) %>% filter(reserve == "Hastings")
+bc_dist <- calc_disttofire("Big Creek", dolan_fire_shp) %>% filter(reserve == "Big Creek")
+
+
+## step 4. make flat file
+# combine results
+dist_to_perim_all <- bind_rows(ml_dist, qr_dist, ht_dist, bc_dist)
+# write csv
+dist_to_perim_all %>% write.csv(file = "data/landscape_disttofire_20250715.csv")
+```
+
+##NDVI values
+I did this for April 2020, April 2021, April 2022 for each plot. I tried to average 2-3 images per month per plot.
+NDVI = normalized difference vegetation index 
+Sentinel-2: Band 8 (near-infrared; NIR) ; Band 4 (Red; RED)
+(Band 8 - Band 4)/(Band 8 + Band 4)
+
+(I have broken this task down by reserve - but probably could improve the code by running a forloop for all reserves at once)
+
+**ML**
+```{r}
+## step 1. define parameters & file paths
+# years of interest
+years <- c("2020", "2021", "2022")
+
+# define folder paths
+folder <- "data/sentinel2/ndvi/mclaughlin/"
+
+# step 2. make function to process 1 year per reserve
+# finds all Band 4 and Band 8 files
+processbands_year <- function(year) {
+  month_year <- paste0(year, "-04") # add April to each year
+  
+  # list Band 4 and Band 8 files for that month-year
+  b4_files <- list.files(folder, pattern = paste0(month_year, ".*B04.*\\.tiff$"), full.names = TRUE)
+  b8_files <- list.files(folder, pattern = paste0(month_year, ".*B08.*\\.tiff$"), full.names = TRUE)
+  
+  # extract date from file name to make sure band 4 & 8 match by date
+  extract_date <- function(x) {
+    str_extract(basename(x), "\\d{4}-\\d{2}-\\d{2}")
+  }
+  
+  # make dataframes
+  b4_df <- tibble(file_b4 = b4_files, date = extract_date(b4_files))
+  b8_df <- tibble(file_b8 = b8_files, date = extract_date(b8_files))
+  
+  # join them by date so only one value per date
+  band_pairs <- inner_join(b4_df, b8_df, by = "date")
+  
+  # load NDVI raster files & calculate NDVI
+  calculate_ndvi <- band_pairs %>% 
+    mutate(raster_b4 = map(file_b4, raster),
+           raster_b8 = map(file_b8, raster),
+           ndvi = map2(raster_b8, raster_b4, ~ (.x - .y) / (.x + .y)),
+           year = year)
+  
+  return(calculate_ndvi)
+}
+
+
+## step 3. set up raster layers prior to function
+calculate_ndvi_ml <- map_dfr(years, processbands_year)
+
+# make reference raster for all calculations
+reference_rasters <- calculate_ndvi_ml %>% 
+  distinct(year, .keep_all = TRUE) %>%
+  dplyr::select(year, ref_raster = ndvi)
+
+# resample rasters to corresponding reference
+aligned_ndvi <- calculate_ndvi_ml %>% 
+  left_join(reference_rasters, by = "year") %>% 
+  mutate(ndvi_aligned = map2(ndvi, ref_raster, ~ resample(.x, .y, method = "bilinear")))
+
+# group by year, stack, and average aligned rasters
+ndvi_list_ml <- aligned_ndvi %>% 
+  group_by(year) %>% 
+  summarise(mean_ndvi = list(mean(stack(ndvi_aligned), na.rm = TRUE)),
+            .groups = "drop") %>% 
+  deframe()
+
+
+## step 4. write function to extract NDVI per plot
+extract_ndvi_reserve <- function(reserve_name, ndvi_list, plots_sf) {
+  
+  # use first raster to extract crs
+  first_raster <- ndvi_list[[1]]
+  
+  # transform crs ofplots
+  plots_transformed <- plots_sf %>% 
+    sf::st_transform(crs = crs(first_raster))
+  
+  # extract ndvi for each year
+  ndvi_years <- map2_dfr(names(ndvi_list), ndvi_list, function(year, raster_obj) {
+    
+  # extract ndvi values for transformed plots
+  ndvi_vals <- raster::extract(raster_obj, plots_transformed)
+    
+  # return dataframe
+  data.frame(plot_name = plots_sf$plot_name, 
+              NDVI = ndvi_vals, 
+              year = as.integer(year),
+              stringsAsFactors = FALSE)
+  })
+  
+  # join metadata
+  ndvi_years %>% 
+    left_join(st_drop_geometry(plots_sf), by = "plot_name") %>% 
+    filter(reserve == reserve_name)
+}
+
+
+## step 5. run function to extract NDVI values at plot locations
+ndvi_extracted_ml <- extract_ndvi_reserve("McLaughlin", ndvi_list_ml, plots_sf)
+  
+
+```
+
+
+**QR**
+```{r}
+## step 1. define parameters & file paths
+# years of interest
+years <- c("2020", "2021", "2022")
+
+# define folder paths
+folder <- "data/sentinel2/ndvi/quailridge/"
+
+# step 2. make function to process 1 year per reserve
+# finds all Band 4 and Band 8 files
+processbands_year <- function(year) {
+  month_year <- paste0(year, "-04") # add April to each year
+  
+  # list Band 4 and Band 8 files for that month-year
+  b4_files <- list.files(folder, pattern = paste0(month_year, ".*B04.*\\.tiff$"), full.names = TRUE)
+  b8_files <- list.files(folder, pattern = paste0(month_year, ".*B08.*\\.tiff$"), full.names = TRUE)
+  
+  # extract date from file name to make sure band 4 & 8 match by date
+  extract_date <- function(x) {
+    str_extract(basename(x), "\\d{4}-\\d{2}-\\d{2}")
+  }
+  
+  # make dataframes
+  b4_df <- tibble(file_b4 = b4_files, date = extract_date(b4_files))
+  b8_df <- tibble(file_b8 = b8_files, date = extract_date(b8_files))
+  
+  # join them by date so only one value per date
+  band_pairs <- inner_join(b4_df, b8_df, by = "date")
+  
+  # load NDVI raster files & calculate NDVI
+  calculate_ndvi <- band_pairs %>% 
+    mutate(raster_b4 = map(file_b4, raster),
+           raster_b8 = map(file_b8, raster),
+           ndvi = map2(raster_b8, raster_b4, ~ (.x - .y) / (.x + .y)),
+           year = year)
+  
+  return(calculate_ndvi)
+}
+
+
+## step 3. set up raster layers prior to function
+calculate_ndvi_qr <- map_dfr(years, processbands_year)
+
+# make reference raster for all calculations
+reference_rasters <- calculate_ndvi_qr %>% 
+  distinct(year, .keep_all = TRUE) %>%
+  dplyr::select(year, ref_raster = ndvi)
+
+# resample rasters to corresponding reference
+aligned_ndvi <- calculate_ndvi_qr %>% 
+  left_join(reference_rasters, by = "year") %>% 
+  mutate(ndvi_aligned = map2(ndvi, ref_raster, ~ resample(.x, .y, method = "bilinear")))
+
+# group by year, stack, and average aligned rasters
+ndvi_list_qr <- aligned_ndvi %>% 
+  group_by(year) %>% 
+  summarise(mean_ndvi = list(mean(stack(ndvi_aligned), na.rm = TRUE)),
+            .groups = "drop") %>% 
+  deframe()
+
+
+## step 4. write function to extract NDVI per plot
+extract_ndvi_reserve <- function(reserve_name, ndvi_list, plots_sf) {
+  
+  # use first raster to extract crs
+  first_raster <- ndvi_list[[1]]
+  
+  # transform crs ofplots
+  plots_transformed <- plots_sf %>% 
+    sf::st_transform(crs = crs(first_raster))
+  
+  # extract ndvi for each year
+  ndvi_years <- map2_dfr(names(ndvi_list), ndvi_list, function(year, raster_obj) {
+    
+  # extract ndvi values for transformed plots
+  ndvi_vals <- raster::extract(raster_obj, plots_transformed)
+    
+  # return dataframe
+  data.frame(plot_name = plots_sf$plot_name, 
+              NDVI = ndvi_vals, 
+              year = as.integer(year),
+              stringsAsFactors = FALSE)
+  })
+  
+  # join metadata
+  ndvi_years %>% 
+    left_join(st_drop_geometry(plots_sf), by = "plot_name") %>% 
+    filter(reserve == reserve_name)
+}
+
+
+## step 5. run function to extract NDVI values at plot locations
+ndvi_extracted_qr <- extract_ndvi_reserve("Quail Ridge", ndvi_list_qr, plots_sf)
+  
+
+```
+
+
+**HT**
+```{r}
+## step 1. define parameters & file paths
+# years of interest
+years <- c("2020", "2021", "2022")
+
+# define folder paths
+folder <- "data/sentinel2/ndvi/hastings/"
+
+# step 2. make function to process 1 year per reserve
+# finds all Band 4 and Band 8 files
+processbands_year <- function(year) {
+  month_year <- paste0(year, "-04") # add April to each year
+  
+  # list Band 4 and Band 8 files for that month-year
+  b4_files <- list.files(folder, pattern = paste0(month_year, ".*B04.*\\.tiff$"), full.names = TRUE)
+  b8_files <- list.files(folder, pattern = paste0(month_year, ".*B08.*\\.tiff$"), full.names = TRUE)
+  
+  # extract date from file name to make sure band 4 & 8 match by date
+  extract_date <- function(x) {
+    str_extract(basename(x), "\\d{4}-\\d{2}-\\d{2}")
+  }
+  
+  # make dataframes
+  b4_df <- tibble(file_b4 = b4_files, date = extract_date(b4_files))
+  b8_df <- tibble(file_b8 = b8_files, date = extract_date(b8_files))
+  
+  # join them by date so only one value per date
+  band_pairs <- inner_join(b4_df, b8_df, by = "date")
+  
+  # load NDVI raster files & calculate NDVI
+  calculate_ndvi <- band_pairs %>% 
+    mutate(raster_b4 = map(file_b4, raster),
+           raster_b8 = map(file_b8, raster),
+           ndvi = map2(raster_b8, raster_b4, ~ (.x - .y) / (.x + .y)),
+           year = year)
+  
+  return(calculate_ndvi)
+}
+
+
+## step 3. set up raster layers prior to function
+calculate_ndvi_ht <- map_dfr(years, processbands_year)
+
+# make reference raster for all calculations
+reference_rasters <- calculate_ndvi_ht %>% 
+  distinct(year, .keep_all = TRUE) %>%
+  dplyr::select(year, ref_raster = ndvi)
+
+# resample rasters to corresponding reference
+aligned_ndvi <- calculate_ndvi_ht %>% 
+  left_join(reference_rasters, by = "year") %>% 
+  mutate(ndvi_aligned = map2(ndvi, ref_raster, ~ resample(.x, .y, method = "bilinear")))
+
+# group by year, stack, and average aligned rasters
+ndvi_list_ht <- aligned_ndvi %>% 
+  group_by(year) %>% 
+  summarise(mean_ndvi = list(mean(stack(ndvi_aligned), na.rm = TRUE)),
+            .groups = "drop") %>% 
+  deframe()
+
+
+## step 4. write function to extract NDVI per plot
+extract_ndvi_reserve <- function(reserve_name, ndvi_list, plots_sf) {
+  
+  # use first raster to extract crs
+  first_raster <- ndvi_list[[1]]
+  
+  # transform crs ofplots
+  plots_transformed <- plots_sf %>% 
+    sf::st_transform(crs = crs(first_raster))
+  
+  # extract ndvi for each year
+  ndvi_years <- map2_dfr(names(ndvi_list), ndvi_list, function(year, raster_obj) {
+    
+  # extract ndvi values for transformed plots
+  ndvi_vals <- raster::extract(raster_obj, plots_transformed)
+    
+  # return dataframe
+  data.frame(plot_name = plots_sf$plot_name, 
+              NDVI = ndvi_vals, 
+              year = as.integer(year),
+              stringsAsFactors = FALSE)
+  })
+  
+  # join metadata
+  ndvi_years %>% 
+    left_join(st_drop_geometry(plots_sf), by = "plot_name") %>% 
+    filter(reserve == reserve_name) 
+}
+
+
+## step 5. run function to extract NDVI values at plot locations
+ndvi_extracted_ht <- extract_ndvi_reserve("Hastings", ndvi_list_ht, plots_sf)
+  
+
+```
+
+
+**BC**
+(because plots are close to cliff/ocean there's some issues with extraction. I have extended this function to try to fix this issue by using varying buffer sizes)
+```{r}
+## step 1. define parameters & file paths
+# years of interest
+years <- c("2020", "2021", "2022")
+
+# define folder paths
+folder <- "data/sentinel2/ndvi/bigcreek/"
+
+# step 2. make function to process 1 year per reserve
+# finds all Band 4 and Band 8 files
+processbands_year <- function(year) {
+  month_year <- paste0(year, "-04") # add April to each year
+  
+  # list Band 4 and Band 8 files for that month-year
+  b4_files <- list.files(folder, pattern = paste0(month_year, ".*B04.*\\.tiff$"), full.names = TRUE)
+  b8_files <- list.files(folder, pattern = paste0(month_year, ".*B08.*\\.tiff$"), full.names = TRUE)
+  
+  # extract date from file name to make sure band 4 & 8 match by date
+  extract_date <- function(x) {
+    str_extract(basename(x), "\\d{4}-\\d{2}-\\d{2}")
+  }
+  
+  # make dataframes
+  b4_df <- tibble(file_b4 = b4_files, date = extract_date(b4_files))
+  b8_df <- tibble(file_b8 = b8_files, date = extract_date(b8_files))
+  
+  # join them by date so only one value per date
+  band_pairs <- inner_join(b4_df, b8_df, by = "date")
+  
+  # load NDVI raster files & calculate NDVI
+  calculate_ndvi <- band_pairs %>% 
+    mutate(raster_b4 = map(file_b4, raster),
+           raster_b8 = map(file_b8, raster),
+           ndvi = map2(raster_b8, raster_b4, ~ (.x - .y) / (.x + .y)),
+           year = year)
+  
+  return(calculate_ndvi)
+}
+
+
+## step 3. set up raster layers prior to function
+calculate_ndvi_bc <- map_dfr(years, processbands_year)
+
+# make reference raster for all calculations
+reference_rasters <- calculate_ndvi_bc %>% 
+  distinct(year, .keep_all = TRUE) %>%
+  dplyr::select(year, ref_raster = ndvi)
+
+# resample rasters to corresponding reference
+aligned_ndvi <- calculate_ndvi_bc %>% 
+  left_join(reference_rasters, by = "year") %>% 
+  mutate(ndvi_aligned = map2(ndvi, ref_raster, ~ resample(.x, .y, method = "bilinear")))
+
+# group by year, stack, and average aligned rasters
+ndvi_list_bc <- aligned_ndvi %>% 
+  group_by(year) %>% 
+  summarise(mean_ndvi = list(mean(stack(ndvi_aligned), na.rm = TRUE)),
+            .groups = "drop") %>% 
+  deframe()
+
+
+## step 4. write function to extract NDVI per plot
+extract_ndvi_reserve <- function(reserve_name, ndvi_list, plots_sf) {
+  
+  # use first raster to extract crs
+  first_raster <- ndvi_list[[1]]
+  
+  # transform crs ofplots
+  plots_transformed <- plots_sf %>% 
+    sf::st_transform(crs = crs(first_raster))
+  
+  # extract ndvi for each year
+  ndvi_years <- map2_dfr(names(ndvi_list), ndvi_list, function(year, raster_obj) {
+    
+  # extract ndvi values for transformed plots
+  ndvi_vals <- raster::extract(raster_obj, plots_transformed)
+    
+  # return dataframe
+  data.frame(plot_name = plots_sf$plot_name, 
+              NDVI = ndvi_vals, 
+              year = as.integer(year),
+              stringsAsFactors = FALSE)
+  })
+  
+  # join metadata
+  ndvi_years %>% 
+    left_join(st_drop_geometry(plots_sf), by = "plot_name") %>% 
+    filter(reserve == reserve_name)
+}
+
+
+## step 5. run function to extract NDVI values at plot locations
+ndvi_extracted_bc <- extract_ndvi_reserve("Big Creek", ndvi_list_bc, plots_sf)
+  
+
+#### Big has extraction issues bc plots close to ocean so i have to do this manually
+
+#try optimizing buffer
+
+# Filter Big Creek plots
+bc_plots <- plots_sf %>% filter(reserve == "Big Creek")
+bc_plots_sp <- as_Spatial(bc_plots)
+
+# Define your fallback buffer sizes (in meters)
+buffer_steps <- c(0,5, 70, 100, 120, 190, 260, 270, 360, 370, 390, 510, 520, 550, 700, 755) # checked using bc_extracted_ndvi %>% filter(is.na(NDVI)) with different buffer sizes
+
+# Extraction function for one point with fallback buffers
+extract_with_fallback <- function(r, point, buffers) {
+  for (b in buffers) {
+    if (b == 0) {
+      val <- raster::extract(r, point)
+    } else {
+      val <- raster::extract(r, point, buffer = b, fun = mean, na.rm = TRUE)
+    }
+    if (!is.na(val)) return(val)
+  }
+  return(NA)  # All attempts failed
+}
+
+# Main loop: extract per year per plot
+bc_extracted_ndvi <- map2_dfr(
+  names(ndvi_list_bc),
+  ndvi_list_bc,
+  function(year, raster_obj) {
+    tibble(
+      plot_name = bc_plots$plot_name,
+      NDVI = map_dbl(1:nrow(bc_plots_sp), ~ extract_with_fallback(raster_obj, bc_plots_sp[.x, ], buffer_steps)),
+      year = year
+    )
+  }
+)
+
+# Add metadata
+bc_extracted_ndvi <- bc_extracted_ndvi %>%
+  left_join(st_drop_geometry(plots_sf), by = "plot_name") %>% 
+  mutate(year = as.integer(year)) # match other dataframes
+
+```
+
+
+Combine all NDVI values
+```{r}
+
+ndvi_extracted_allreserves <- bind_rows(ndvi_extracted_ml,ndvi_extracted_qr,ndvi_extracted_ht,
+                                        bc_extracted_ndvi) # BC is slightly different due to ocean/cliff problem want to keep the name different to flag it 
+
+
+## make flat file
+
+ndvi_extracted_allreserves %>% 
+  dplyr::select(plot_name:site) %>% 
+  ## fix Big creek missing metadata
+  mutate(reserve = case_when(grepl("BC ", plot_name) ~ "Big Creek",
+                             TRUE ~ reserve),
+         treatment = case_when(grepl(" BURN", plot_name) ~ "Burn",
+                                     TRUE ~ treatment),
+         treatment = case_when(grepl("UNBURN", plot_name) ~ "Unburn",
+                                     TRUE ~ treatment),
+         veg_category = case_when(grepl("S0", plot_name) ~ "Scrub",
+                                  TRUE ~ veg_category),
+          
+         veg_category = case_when(grepl("R0", plot_name) ~ "Forest",
+                                  TRUE ~ veg_category),
+         veg_category = case_when(grepl("G0", plot_name) ~ "Grassland",
+                                  TRUE ~ veg_category)) %>% 
+  write.csv(file = "data/landscape_ndvi_20250715.csv")
+```
+
+
+##NBR values extracted per plot
+I did this for August 2020 and October for the entire reserve (this is a figure not analysis)
+NBR = normalized burn ratio
+Sentinel-2: Band 8 (near-infrared; NIR) ; Band 12 (shortwave-infrared; RED)
+(Band 8 - Band 12)/(Band 8 + Band 12)
+
+- large NBR = high NIR reflectance and lower SWIR reflectance (Healthy Veg)
+- small NBR = lower NIR reflectance and high SWIR reflectance (Burned Area)
+
+And then for dNBR
+NBR_prefire - NBR_postfire
+
+- large dNBR = sig vegetation loss (Severe Burn)
+- small dNBR = (less severe burn)
+
+```{r}
+## step 1. state parameters
+reserves <- c("mclaughlin", "quailridge", "hastings", "bigcreek")
+reserve_names <- c("McLaughlin", "Quail Ridge", "Hastings", "Big Creek")
+
+
+## step 2. build folder paths
+build_paths <- function(reserve) {
+  list(pre_8 = sprintf("data/sentinel2/nbr/%s/2020-08-02-00:00_2020-08-02-23:59_Sentinel-2_L2A_B08_(Raw).tiff", reserve),
+       pre_12 = sprintf("data/sentinel2/nbr/%s/2020-08-02-00:00_2020-08-02-23:59_Sentinel-2_L2A_B12_(Raw).tiff", reserve),
+       post_8 = sprintf("data/sentinel2/nbr/%s/2020-10-01-00:00_2020-10-01-23:59_Sentinel-2_L2A_B08_(Raw).tiff", reserve),
+       post_12 = sprintf("data/sentinel2/nbr/%s/2020-10-01-00:00_2020-10-01-23:59_Sentinel-2_L2A_B12_(Raw).tiff", reserve))
+}
+
+## because bc has different dates
+build_paths_bc <- function(reserve) {
+  list(pre_8 = sprintf("data/sentinel2/nbr/%s/2020-08-07-00:00_2020-08-07-23:59_Sentinel-2_L2A_B08_(Raw).tiff", reserve),
+       pre_12 = sprintf("data/sentinel2/nbr/%s/2020-08-07-00:00_2020-08-07-23:59_Sentinel-2_L2A_B12_(Raw).tiff", reserve),
+       post_8 = sprintf("data/sentinel2/nbr/%s/2020-10-01-00:00_2020-10-01-23:59_Sentinel-2_L2A_B08_(Raw).tiff", reserve),
+       post_12 = sprintf("data/sentinel2/nbr/%s/2020-10-01-00:00_2020-10-01-23:59_Sentinel-2_L2A_B12_(Raw).tiff", reserve))
+}
+
+
+## step 3. write function for NBR extraction
+calc_nbr <- function(reserve, reserve_name, plots_sf, bc_special = FALSE) {
+  
+  # make special case for BC because it has different dates
+  paths <- if(bc_special) build_paths_bc(reserve) else build_paths(reserve)
+  
+  # read in NIR (band 8) & SWIR (band 12)
+  pre_8 <- raster(paths$pre_8)
+  pre_12 <- raster(paths$pre_12)
+  post_8 <- raster(paths$post_8)
+  post_12 <- raster(paths$post_12)
+  
+  # calculate NBR
+  pre_nbr <- (pre_8 - pre_12) / (pre_8 + pre_12)
+  post_nbr <- (post_8 - post_12) / (post_8 + post_12)
+  
+  # calculate dNBR
+  dnbr <- pre_nbr - post_nbr
+  
+  # convert rasters to data frames (new)
+  pre_df <- as.data.frame(pre_nbr, xy = TRUE, na.rm = TRUE) %>% rename(pre_NBR = layer)
+  post_df <- as.data.frame(post_nbr, xy = TRUE, na.rm = TRUE) %>% rename(post_NBR = layer)
+  dnbr_df <- as.data.frame(dnbr, xy = TRUE, na.rm = TRUE) %>% rename(dNBR = layer)
+  
+  # merge all three
+  # changed to Keele 2006 to include 2 moderate classes
+  combined_df <- dnbr_df %>%
+    left_join(pre_df, by = c("x", "y")) %>%
+    left_join(post_df, by = c("x", "y")) %>%
+    mutate(
+      dNBR_class = case_when(
+        dNBR < 0.1 ~ "Unburned",
+        dNBR >= 0.1 & dNBR < 0.27 ~ "Low Severity",
+        dNBR >= 0.27 & dNBR < 0.44 ~ "Moderate-Low Severity",
+        dNBR >= 0.44 & dNBR < 0.66 ~ "Moderate-High Severity",
+        dNBR >= 0.66 ~ "High Severity",
+        TRUE ~ NA_character_),
+      dNBR_class = factor(dNBR_class, 
+                          levels = c("Unburned", "Low Severity", "Moderate-Low Severity", "Moderate-High Severity", "High Severity")),
+      reserve = reserve_name)
+  
+  # convert to sf
+  dnbr_sf <- st_as_sf(combined_df, coords = c("x", "y"), crs = crs(pre_8))
+  
+  # subset plots for this reserve and transform CRS
+  plots_reserve <- plots_sf %>% 
+    filter(reserve == reserve_name) %>% 
+    st_transform(crs = crs(dnbr_sf))
+  
+  # spatial join (nearest if needed)
+  joined <- st_join(plots_reserve, dnbr_sf, join = st_nearest_feature)
+
+  # drop geometry for cleaner table
+  joined_clean <- st_drop_geometry(joined)
+
+  return(joined_clean)
+
+  
+}
+
+## step 4. make single dataframe of values
+dnbr_all <- map2_dfr(reserves, reserve_names, 
+                     ~ calc_nbr(.x, .y, plots_sf = plots_sf, bc_special = .x == "bigcreek"))
+
+## step 5. write flat file
+dnbr_all %>% 
+  dplyr::select(-reserve.y) %>% 
+  rename(reserve = reserve.x) %>% 
+  write.csv(file = "data/landscape_nbr_20250715.csv")
+```
+
+##NBR values for raster plot
+```{r}
+dnbr_raster <- read.csv("data/reserve_dnbr_raster_20250620.csv") %>% 
+  dplyr::select(-X) %>% 
+      mutate(dNBR_class = case_when(dNBR < 0.1 ~ "Unburned",
+                                    dNBR >= 0.1 & dNBR < 0.27 ~ "Low Severity",
+                                    dNBR >= 0.27 & dNBR < 0.44 ~ "Moderate-Low Severity",
+                                    dNBR >= 0.44 & dNBR < 0.66 ~ "Moderate-High Severity",
+                                    dNBR >= 0.66 ~ "High Severity",
+                                    TRUE ~ NA),
+        dNBR_class = factor(dNBR_class, 
+                          levels = c("Unburned", 
+                                     "Low Severity",
+                                     "Moderate-Low Severity", 
+                                     "Moderate-High Severity", 
+                                     "High Severity")))
+      
+      
+
+write.csv(dnbr_raster, file = "data/landscape_dnbrraster_20250715.csv")
+```
+
+#Climate variables
+
+##Temperature
+30-year normal annual means
+```{r}
+## step 1. raster PRISM data
+tmean_normals <- raster("data/prism/PRISM_tmean_30yr_normal_4kmM5_annual_bil/PRISM_tmean_30yr_normal_4kmM5_annual_bil.bil")
+
+# check
+# plot(tmean_normals) 
+
+## step 2. format plot coordinates
+plots_sf_prism <- plots_sf %>% 
+  st_as_sf(crs = st_crs(tmean_normals))
+
+## step 3. extract raster data for plot coords
+tmean_normal_extract <- terra::extract(tmean_normals,plots_sf_prism)
+
+## step 4. turn into dataframe
+tmean_normal_extract_df <- as.data.frame(tmean_normal_extract, xy = TRUE, na.rm = TRUE) %>% 
+  rename(tmean_normal = tmean_normal_extract) 
+
+## step 5. add metadat
+tmean_normal_plot <- cbind(plots_sf,tmean_normal_extract_df) %>% st_drop_geometry()
+```
+
+##Vapor pressure deficit
+30-year normal annual means
+(have to calculate mean from min and max)
+
+```{r}
+## step 1. raster PRISM data
+vpd_min_normals <- raster("data/prism/PRISM_vpdmin_30yr_normal_4kmM5_annual_bil/PRISM_vpdmin_30yr_normal_4kmM5_annual_bil.bil")
+vpd_max_normals <- raster("data/prism/PRISM_vpdmax_30yr_normal_4kmM5_annual_bil/PRISM_vpdmax_30yr_normal_4kmM5_annual_bil.bil")
+
+# check
+# plot(vpd_min_normals)
+# plot(vpd_max_normals)
+
+## step 2. format plot coordinates --> already did this above
+
+## step 3. extract raster data for plot coords
+vpd_min_normal_extract <- terra::extract(vpd_min_normals, plots_sf_prism) # min
+vpd_max_normal_extract <- terra::extract(vpd_max_normals, plots_sf_prism) # max
+
+## step 4. turn into dataframe
+vpd_min_normal_extract_df <- as.data.frame(vpd_min_normal_extract, xy = TRUE, na.rm = TRUE) %>% 
+  rename(vpd_min_normal = vpd_min_normal_extract)
+
+vpd_max_normal_extract_df <- as.data.frame(vpd_max_normal_extract, xy = TRUE, na.rm = TRUE) %>% 
+  rename(vpd_max_normal = vpd_max_normal_extract)
+
+## step 5. add metadat
+vpd_minmax_normal_plot <- cbind(plots_sf, vpd_min_normal_extract_df, vpd_max_normal_extract_df) %>% st_drop_geometry()
+
+## step 6. calculate mean vpd
+vpd_minmaxmean_normal_plot <- vpd_minmax_normal_plot %>% 
+  group_by(plot_name) %>% 
+  mutate(vpd_mean_normal = ((vpd_min_normal+vpd_max_normal)/2))
+
+```
+
+##Precipitation
+Current
+(to calculate pre-winter precip to capture short term changes in precip and veg)
+```{r}
+
+## step 1. raster PRISM data
+# Winter 2020
+ppt_2019_12 <- raster("data/prism/PRISM_ppt_stable_4kmM3_201912_bil/PRISM_ppt_stable_4kmM3_201912_bil.bil")
+ppt_2020_01 <- raster("data/prism/PRISM_ppt_stable_4kmM3_202001_bil/PRISM_ppt_stable_4kmM3_202001_bil.bil")
+ppt_2020_02 <- raster("data/prism/PRISM_ppt_stable_4kmM3_202002_bil/PRISM_ppt_stable_4kmM3_202002_bil.bil")
+ppt_2020_03 <- raster("data/prism/PRISM_ppt_stable_4kmM3_202003_bil/PRISM_ppt_stable_4kmM3_202003_bil.bil")
+
+
+# Winter 2021
+ppt_2020_12 <- raster("data/prism/PRISM_ppt_stable_4kmM3_202012_bil/PRISM_ppt_stable_4kmM3_202012_bil.bil")
+ppt_2021_01 <- raster("data/prism/PRISM_ppt_stable_4kmM3_202101_bil/PRISM_ppt_stable_4kmM3_202101_bil.bil")
+ppt_2021_02 <- raster("data/prism/PRISM_ppt_stable_4kmM3_202102_bil/PRISM_ppt_stable_4kmM3_202102_bil.bil")
+ppt_2021_03 <- raster("data/prism/PRISM_ppt_stable_4kmM3_202103_bil/PRISM_ppt_stable_4kmM3_202103_bil.bil")
+
+# Winter 2022
+ppt_2021_12 <- raster("data/prism/PRISM_ppt_stable_4kmM3_202112_bil/PRISM_ppt_stable_4kmM3_202112_bil.bil")
+ppt_2022_01 <- raster("data/prism/PRISM_ppt_stable_4kmM3_202201_bil/PRISM_ppt_stable_4kmM3_202201_bil.bil")
+ppt_2022_02 <- raster("data/prism/PRISM_ppt_stable_4kmM3_202202_bil/PRISM_ppt_stable_4kmM3_202202_bil.bil")
+ppt_2022_03 <- raster("data/prism/PRISM_ppt_stable_4kmM3_202203_bil/PRISM_ppt_stable_4kmM3_202203_bil.bil")
+
+
+## step 2. make list for easier extraction
+ppt_rasters <- list(
+  "2019-12" = ppt_2019_12,
+  "2020-01" = ppt_2020_01,
+  "2020-02" = ppt_2020_02,
+  "2020-03" = ppt_2020_03,
+  "2020-12" = ppt_2020_12,
+  "2021-01" = ppt_2021_01,
+  "2021-02" = ppt_2021_02,
+  "2021-03" = ppt_2021_03,
+  "2021-12" = ppt_2021_12,
+  "2022-01" = ppt_2022_01,
+  "2022-02" = ppt_2022_02,
+  "2022-03" = ppt_2022_03)
+
+
+## step 3. check crs & make reference for ppt
+plots_transformed <- st_transform(plots_sf, crs = crs(ppt_rasters[[1]]))
+
+
+## step 4. extract ppt per plot 
+extract_ppt <- imap_dfr(ppt_rasters, function(rast, date) {
+  values <- raster::extract(rast, plots_transformed)
+  
+  tibble(plot_name = plots_transformed$plot_name,
+         reserve = plots_transformed$reserve,
+         ppt_mm = values, 
+         date = date)
+})
+
+## step 5. add meta data
+
+winter_ppt <- extract_ppt %>% 
+  # make winter categories for plotting purposes
+  mutate(winter = case_when(date == "2019-12" ~ "pre-firewinter", 
+                            date == "2020-01" ~ "pre-firewinter", 
+                            date == "2020-02" ~ "pre-firewinter", 
+                            date == "2020-03" ~ "pre-firewinter",
+         
+                            date == "2020-12" ~ "post-firewinter_1", 
+                            date == "2021-01" ~ "post-firewinter_1", 
+                            date == "2021-02" ~ "post-firewinter_1", 
+                            date == "2021-03" ~ "post-firewinter_1",
+
+                            date == "2021-12" ~ "post-firewinter_2", 
+                            date == "2022-01" ~ "post-firewinter_2", 
+                            date == "2022-02" ~ "post-firewinter_2", 
+                            date == "2022-03" ~ "post-firewinter_2",
+                            TRUE ~ NA)) %>% 
+  group_by(plot_name, winter) %>% 
+  # summarise mean for plotting purposes
+  summarise(winterppt_mean = mean(ppt_mm, na.rm = TRUE)) %>% 
+  # make wide for plotting purposes
+  pivot_wider(names_from = winter, values_from = winterppt_mean) %>% 
+  rename_with(.fn = ~paste0("ppt_mean", .x), .cols = -plot_name)
+
+```
+
+
+Combine all PRISM variables
+```{r}
+
+# first, combine non-precip variables
+prism_normals_allplots <- tmean_normal_plot %>% 
+  left_join(vpd_minmaxmean_normal_plot %>% 
+              dplyr::select(reserve, plot_name,vpd_mean_normal, vpd_min_normal, vpd_max_normal), 
+            by = c("reserve", "plot_name")) %>% 
+  dplyr::select(reserve, plot_name, 
+                tmean_normal, vpd_mean_normal,
+                vpd_min_normal, vpd_max_normal)
+
+# combine precip variables
+climate_full <- prism_normals_allplots %>% 
+  left_join(winter_ppt, by = "plot_name")
+
+write.csv(climate_full, file = "data/landscape_prism_20250715.csv")
+
+```
+
+
+#Merge Covariate data
+```{r}
+## step 1. upload data
+
+# field level 
+# plots, ticks, soil surface severity, vegetation (only have a subset of field measurements in this file_
+field_merge <- read.csv("data/fieldmeasurements_20250715.csv") %>% dplyr::select(-X)
+
+# landscape level
+reserve_climate <- read.csv("data/landscape_prism_20250715.csv") %>% dplyr::select(-c(X, vpd_min_normal, vpd_max_normal))
+reserve_distburn <- read.csv("data/landscape_disttofire_20250715.csv") %>% dplyr::select(-X)
+reserve_percburned <- read.csv("data/landscape_percentburned_20250715.csv") 
+
+## step 2. clean up data so they will all merge
+field_merge_clean <- field_merge %>% 
+  mutate(plot_name = str_trim(plot_name))
+
+landscape_clean <- reserve_climate %>% 
+  left_join(reserve_distburn %>%
+              dplyr::select(plot_name, distance_to_perim), by = "plot_name") %>% 
+  left_join(reserve_percburned, by = "reserve") %>%
+    mutate(plot_name = str_trim(plot_name))
+
+
+## step 3. merge
+field_landscape_combo <- field_merge_clean %>% 
+  left_join(landscape_clean, by = "plot_name") %>% 
+  rename(reserve = reserve.x)
+
+## step 4. make 1 precip collumn for sem analysis
+sem_data <- field_landscape_combo %>% 
+  rowwise() %>% 
+  mutate(ppt_mean_overall = mean(c_across(starts_with("ppt_mean")), na.rm = TRUE)) %>% 
+  dplyr::select(plot_name:woody_debris_mean,
+                distance_to_perim, reserve_percentburn,
+                tmean_normal:vpd_mean_normal,
+                ppt_mean_overall, 
+                ppt_meanpre.firewinter,
+                ppt_meanpost.firewinter_1,ppt_meanpost.firewinter_2)
+
+## step 5. make flat file to use for SEM analysis
+write.csv(sem_data, file = "data/sem_covariates_20250715.csv")
+```
