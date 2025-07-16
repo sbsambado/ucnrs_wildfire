@@ -1,0 +1,704 @@
+---
+title: "UCNRS Wildfire Figure"
+output: html_document
+date: "2025-07-16"
+---
+#Journal
+Journal of Applied Ecology 
+
+#Title
+Wildfire disturbance and ecological cascades: teasing apart the direct and indirect effects of fire on tick populations
+
+#Corresponding Author
+Samantha Sambado (she/her) - sbsambado@ucsb.edu or ssambado@stanford.edu
+
+
+##Code to recreate figures in main & supplemental text
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+## upload necessary packages
+library(readr)
+library(tidyverse)
+library(rnaturalearth)
+library(sf)
+library(ggrepel)
+library(patchwork)
+library(cowplot)
+library(gridExtra)
+
+## upload necessary data
+# (some datafiles will be read in via a function and may not be listed here)
+
+# shapefile of CA
+california <- ne_states(returnclass = "sf") %>% filter(admin == "United States of America", name == "California")
+
+## fire shp files
+hen_fire_shp <- st_read("data/shapefiles/fireperimeter/hen_fire.shp", quiet = TRUE)
+river_fire_shp <- st_read("data/shapefiles/fireperimeter/river_fire.shp", quiet = TRUE)
+dolan_fire_shp <- st_read("data/shapefiles/fireperimeter/dolan_fire.shp", quiet = TRUE)
+
+## dNBR
+# this file is too large to put anywhere
+dnbr_raster <- read.csv("data/landscape_dnbrraster_20250715.csv") %>% 
+  dplyr::select(-X) %>% 
+  mutate(dNBR_class = factor(dNBR_class,
+                       levels = c("Unburned",
+                                  "Low Severity",
+                                  "Moderate-Low Severity",
+                                  "Moderate-High Severity",
+                                  "High Severity")))
+
+## field data
+field_data <- read.csv("data/fieldmeasurements_20250715.csv") %>% dplyr::select(-X)
+
+## ndvi
+ndvi <- read.csv("data/landscape_ndvi_20250715.csv") %>% dplyr::select(-X) 
+
+## reserve shp files
+ml_shp <- st_read("data/shapefiles/reserves/mclaughlin/McLaughlin_Boundary.shp") %>% st_transform(crs = 4326)
+qr_shp <- st_read("data/shapefiles/reserves/quailridge/Quail_Ridge_Boundary.shp") %>% st_transform(crs = 4326)
+ht_shp <- st_read("data/shapefiles/reserves/hastings/Hastings_Boundary.shp") %>% st_transform(crs = 4326)
+bc_shp <- st_read("data/shapefiles/reserves/bigcreek/Landels_Hill_Big_Creek_Boundary.shp") %>% st_transform(crs = 4326)
+```
+
+#Main Text
+
+##Fig 1
+
+Panel A
+```{r}
+## step 1. define box around study sites
+bbox_poly <- st_as_sfc(st_bbox(c(xmin = -123, xmax = -121, ymin = 36, ymax = 39), 
+                               crs = st_crs(california)))
+# this helps aesthetics with line thickness
+bbox_line <- st_boundary(bbox_poly)
+
+## step 2. map inset of CA 
+ca_inset <- ggplot() +
+  geom_sf(data = california, fill = "grey90", color = "black") +
+  geom_sf(data = bbox_line, fill = NA, color = "#f03b20") +
+  theme_void() +
+  theme(panel.border = element_rect(color = "black", fill = NA, size = 1))
+
+
+## step 3. make map of study sites
+# need to alter lat/lon nudge for final figure
+plots_map <- plots_sf %>% 
+  group_by(reserve) %>% 
+  slice(1) %>% 
+  mutate(label_x = case_when(reserve == "Big Creek" ~ st_coordinates(geometry)[,1] - 0.03,
+                             reserve == "McLaughlin" ~ st_coordinates(geometry)[,1] + 0.283, 
+                             TRUE ~ st_coordinates(geometry)[,1]),
+         label_y = case_when(reserve == "McLaughlin" ~ st_coordinates(geometry)[,2] + .0,
+                             TRUE ~ st_coordinates(geometry)[,2]))
+
+
+fire_perim_map <- ggplot() +
+  geom_sf(data = california, fill = "grey90", color = "black") +
+  geom_sf(data = hen_fire_shp, fill = "#f03b20", color = "black") +
+  geom_sf(data = river_fire_shp, fill = "#f03b20", color = "black") + 
+  geom_sf(data = dolan_fire_shp, fill = "#f03b20", color = "black") +
+  geom_label_repel(data = plots_map, 
+                   aes(x = label_x,y = label_y, label = reserve),
+                   box.padding = 3,size = 6, fontface = "bold") +
+  geom_sf(data = plots_clean_sf, shape = 24, fill = "#ffeda0", color = "black",size = 4) +
+  coord_sf(xlim = c(-123, -121), ylim = c(36, 39)) +
+  theme_light() +
+  annotation_scale(location = "bl", width_hint = .2) +
+  annotation_north_arrow(location = "bl", which_north = "true",
+                         pad_x = unit(.01, "in"), pad_y = unit(.3, "in"),
+                         style = north_arrow_fancy_orienteering) +
+  labs(x = "Longitude", y = "Latitude") +
+  theme(axis.title = element_text(face = "bold", size = 14),
+        axis.text = element_text(size = 12))
+  
+
+```
+
+Panel B
+```{r}
+## step 1. make individual plots
+
+## McLaughlin
+dnbr_plot_ml <- dnbr_raster  %>% 
+  filter(reserve == "McLaughlin") %>% 
+ggplot(aes(x = x, y = y, fill = dNBR_class)) +
+ geom_raster()  +
+  scale_fill_manual(values = c("#31a354" ,"#fff7bc", "#fdae61", "#f46d43","#d73027")) +
+  labs(title = " McLaughlin", 
+       fill = "Fire Severity") +
+  theme_void() +  
+  theme(title = element_text(face = "bold", size = 13),
+        legend.position = c(.25,.25),#"bottom",.15
+        legend.text = element_text(size = 10), 
+        legend.key.size = unit(0.6, "cm"),
+        plot.background = element_rect(color = "black", size = 1),
+        axis.text = element_blank(), 
+        axis.title = element_blank()) +
+  coord_fixed(ratio = 1)
+
+## Quail Ridge
+dnbr_plot_qr <- dnbr_raster  %>% 
+  filter(reserve == "Quail Ridge") %>% 
+ggplot(aes(x = x, y = y, fill = dNBR_class)) +
+ geom_raster()  +
+  scale_fill_manual(values = c("#31a354" ,"#fff7bc", "#fdae61", "#f46d43","#d73027")) +
+  labs(title = " Quail Ridge", 
+       fill = "Fire Severity") +
+  theme_void() +  
+  theme(title = element_text(face = "bold", size = 13),
+        legend.position = c(.25,.25),#"bottom",.15
+        legend.text = element_text(size = 10), 
+        legend.key.size = unit(0.6, "cm"),
+        plot.background = element_rect(color = "black", size = 1),
+        axis.text = element_blank(), 
+        axis.title = element_blank()) +
+  guides(fill = FALSE) +
+  coord_fixed(ratio = 1)
+
+## Hastings
+dnbr_plot_ht <- dnbr_raster  %>% 
+  filter(reserve == "Hastings") %>% 
+ggplot(aes(x = x, y = y, fill = dNBR_class)) +
+ geom_raster()  +
+  scale_fill_manual(values = c("#31a354" ,"#fff7bc", "#fdae61", "#f46d43","#d73027")) +
+  labs(title = " Hastings", 
+       fill = "Fire Severity") +
+  theme_void() +  
+  theme(title = element_text(face = "bold", size = 13),
+        legend.position = c(.25,.25),
+        legend.text = element_text(size = 10), 
+        legend.key.size = unit(0.6, "cm"),
+        plot.background = element_rect(color = "black", size = 1),
+        axis.text = element_blank(), 
+        axis.title = element_blank()) +
+  guides(fill = FALSE) +
+  coord_fixed(ratio = 1)
+
+## Big Creek
+dnbr_plot_bc <- dnbr_raster  %>% 
+  filter(reserve == "Big Creek") %>% 
+ggplot(aes(x = x, y = y, fill = dNBR_class)) +
+ geom_raster()  +
+  scale_fill_manual(values = c("#31a354" ,"#fff7bc", "#fdae61", "#f46d43","#d73027")) +
+  labs(title = " Big Creek", 
+       fill = "Fire Severity") +
+  theme_void() +  
+  theme(title = element_text(face = "bold", size = 13),
+        legend.position = c(.25,.25),
+        legend.text = element_text(size = 10), 
+        legend.key.size = unit(0.6, "cm"),
+        plot.background = element_rect(color = "black", size = 1),
+        axis.text = element_blank(), 
+        axis.title = element_blank()) +
+  guides(fill = FALSE) +
+  coord_fixed(ratio = 1)
+```
+
+Combine panels
+```{r}
+# get rid of margin
+fire_perim <- fire_perim_map + theme(plot.margin = margin(0, 0, 0, 0))
+
+# create middle row
+middle_row <- dnbr_plot_qr | dnbr_plot_ht
+
+# create full reserve grid
+reserves_grid <- dnbr_plot_ml / middle_row / dnbr_plot_bc +
+  plot_layout(heights = c(1, 1, 1))
+
+# combine both panels
+both_panels <- fire_perim + reserves_grid + 
+  plot_layout(widths = c(2.5, 2)) & 
+  theme(plot.margin = margin(0, 0, 0, 0))
+
+# format figure
+both_panels_formatted <- cowplot::plot_grid(both_panels,
+                                            ncol = 2,
+                                            rel_widths = c(0.85, 0.15),
+                                            align = "hv", axis = "tblr")
+
+both_panels_formatted_annotated <- ggdraw() +
+  draw_plot(both_panels_formatted) +
+  draw_plot_label(label = c("A", "B"),
+                  x = c(0.03, 0.45),
+                  y = c(1,1),
+                  fontface = "bold", size = 18) +
+  draw_plot(ca_inset, x = 0.07, y = 0.15, width = 0.2, height = 0.2) +
+  # add connecting line for ML label 
+  draw_line(x = c(.215, .255),y = c(.89, .892), color = "black", size = .5)
+
+# make sure it saves
+print(both_panels_formatted_annotated)
+
+## now officially save
+ggsave(file = "figures/fig_1.png",
+       plot = both_panels_formatted_annotated,
+       width = 14, height = 10, dpi = 600)
+```
+
+
+##Fig 2
+
+Panel A
+```{r}
+## format data
+# summarise by veg category
+fig2a_summary <- field_data %>% 
+  group_by(treatment, veg_category) %>% 
+  summarise(tick_density_mean = mean(tick_density, na.rm = TRUE),
+            tick_density_se = sd(tick_density) / sqrt(n())) %>% 
+  mutate(veg_category = factor(veg_category,
+                               levels = c("Grassland",
+                                          "Scrub",
+                                          "Forest"),
+                               labels = c("Grassland",
+                                          "Shrubland",
+                                          "Forest")))
+
+## plot it
+fig2a <- fig2a_summary %>% 
+  ggplot(aes(x = veg_category, y = tick_density_mean, fill = treatment)) +
+  geom_bar(stat = "identity", position = "dodge", width = 0.7, color = "black") +
+  geom_errorbar(aes(ymin = tick_density_mean - tick_density_se,
+                    ymax = tick_density_mean + tick_density_se),
+                position = position_dodge(width = .7), width = .2) +
+  labs(x = NULL, y = expression(bold("Mean Tick Density per 100" ~ m^2)),
+                                fill = "Treatment", tag = "A") +
+         theme_classic(base_size = 16) +
+  scale_fill_manual(values = c("#f03b20", "#91bfdb")) +
+  theme(legend.position = "bottom",
+        legend.title = element_text(face = "bold", size = 16),
+        plot.tag = element_text(face = "bold", size = 18),
+        axis.text.x = element_text(face = "bold")) +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.1)), limits = c(0, NA)) +
+  geom_text(aes(x = 1, y = 4.1, label = "p = 0.70"), 
+            position = position_nudge(x = 0), size = 5, fontface = "bold", color = "black") +
+  geom_text(aes(x = 2, y = 7.05, label = "p = 0.02*"), 
+            position = position_nudge(x = 0), size = 5, fontface = "bold", color = "black") +
+  geom_text(aes(x = 3, y = 6.3, label = "p < 0.001***"), 
+            position = position_nudge(x = 0), size = 5, fontface = "bold", color = "black")
+  
+```
+
+
+Panel B
+```{r}
+## format data
+# summarise by veg category
+fig2b_summary <- ndvi  %>% 
+  filter(treatment == "Burn") %>% 
+  group_by(veg_category) %>% 
+  summarise(ndvi_basemedian = median(NDVI, na.rm = TRUE)) %>% 
+  mutate(veg_category = factor(veg_category,
+                               levels = c("Grassland",
+                                          "Scrub",
+                                          "Forest"),
+                               labels = c("Grassland",
+                                          "Shrubland",
+                                          "Forest"))) 
+## plot it
+
+fig2b <- ndvi %>% 
+  filter(treatment == "Burn") %>% 
+  mutate(veg_category = factor(veg_category,
+                               levels = c("Grassland",
+                                          "Scrub",
+                                          "Forest"),
+                               labels = c("Grassland",
+                                          "Shrubland",
+                                          "Forest")),
+         reserve = factor(reserve,
+                          labels = c("BC", "HT", "ML", "QR"))) %>% 
+  ggplot(aes(x = as.factor(year), y = NDVI)) +
+  geom_hline(data = fig2b_summary, aes(yintercept = ndvi_basemedian), linetype = "dashed") +
+  geom_boxplot(width = .5, fill = "grey85") + 
+  geom_jitter(aes(color = reserve), width = .07, size = 2) +
+  scale_color_viridis_d(direction = -1) +
+  facet_wrap(~fct_relevel(veg_category, "Forest", "Shrubland", "Grassland"), ncol = 1) +
+  labs(x = NULL, y = "NDVI", color = "Reserve", tag = "B") +
+  theme_classic(base_size = 16) +
+  theme(legend.position = "bottom",
+        axis.text.x = element_text(face = "bold"),
+        axis.title.y = element_text(face = "bold"),
+        legend.title = element_text(face = "bold", size = 16),
+        plot.tag = element_text(face = "bold", size = 18),
+        strip.text = element_text(face = "bold"),
+        strip.background = element_rect(fill = "grey95")) +
+  guides(color = guide_legend(override.aes = list(size = 3)))
+
+```
+
+
+Combine
+```{r}
+fig_2 <- ggarrange(fig2a, fig2b,
+                   ncol = 2, align = "hv", 
+                   widths = c(.40, .60))
+
+ggsave(fig_2, file = "figures/fig_2.png", width = 11, height = 6, dpi = 600)
+```
+
+
+##Fig 3 
+Need to add.
+
+
+##Supplemental
+
+##Fig S1
+```{r}
+## step 1. format data 
+plots_spatial <- read.csv("data/plotscoords_spatial_20250715.csv") %>% 
+  dplyr::select(-X) %>% 
+  st_as_sf(coords = c("longitude", "latitude"), crs = 4326) %>% 
+  mutate(plot_name = str_trim(plot_name))
+
+ml_plots <- plots_spatial %>% filter(reserve == "McLaughlin")
+ht_plots <- plots_spatial %>% filter(reserve == "Hastings")
+bc_plots <- plots_spatial %>% filter(reserve == "Big Creek")
+
+# QR bounday shp has a lot of internal lines that look messy
+qr_kml <- st_read("data/shapefiles/reserves/quailridge_boundary2014_nointernallines.kml")
+# get rid of points
+quail_poly <- qr_kml[qr_kml$Name == "Quail Ridge Reserve", ]
+
+
+## step 2. write function to give plots points padding
+expand_bbox <- function(bbox_num, padding_ratio = 0.01) {
+    xmin <- bbox_num[1]
+  ymin <- bbox_num[2]
+  xmax <- bbox_num[3]
+  ymax <- bbox_num[4]
+  
+  xpad <- (xmax - xmin) * padding_ratio
+  ypad <- (ymax - ymin) * padding_ratio
+  
+  
+  c(xmin - xpad,
+    ymin - ypad,
+    xmax + xpad,
+    ymax + ypad)
+}
+
+## step 3. write function to produce consistent plots
+make_reserve_map <- function(reserve_name, reserve_shp, plots_sf) {
+  reserve_bbox <- st_bbox(reserve_shp)
+  reserve_bbox_num <- as.numeric(reserve_bbox)
+  padded_bbox <- expand_bbox(reserve_bbox_num, 0.01)
+  
+  ggplot() +
+    geom_sf(data = ca, fill = "grey99", color = NA) +
+    geom_sf(data = reserve_shp, fill = "#d8e2dc", color = "black", size = 0.3) +
+    geom_sf(data = plots_sf %>% filter(reserve == reserve_name),
+            aes(color = treatment, shape = veg_type),
+            size = 2) +
+    coord_sf(xlim = c(padded_bbox[1], padded_bbox[3]),
+             ylim = c(padded_bbox[2], padded_bbox[4]),
+      expand = FALSE) +
+    scale_color_manual(values = c("#E65100", "#1E88E5")) +
+    scale_shape_manual(values = c("Grassland" = 16, 
+                                  "Chamise" = 15,
+                                  "Scrub" = 15,
+                                  "Redwood" = 17,
+                                  "Oak Woodland" = 17)) +
+    labs(title = reserve_name, color = "Treatment", shape = "Habitat") +
+    annotation_scale(location = "bl", width_hint = 0.2) +
+    annotation_north_arrow(location = "bl", which_north = "true",
+                           pad_x = unit(0.01, "in"), pad_y = unit(0.3, "in"),
+                           style = north_arrow_fancy_orienteering) +
+    theme_minimal(base_size = 12) +
+    theme(
+      plot.title = element_text(face = "bold", hjust = 0.5),
+      legend.title = element_text(face = "bold"),
+      axis.title = element_blank(),
+      axis.text = element_blank(),
+      axis.ticks = element_blank(),
+      panel.grid = element_blank(),
+      plot.background = element_rect(color = "black", size = 1),
+      panel.border = element_rect(color = "black", fill = NA)
+    )
+}
+
+## step 4. apply function 
+ml_map <- make_reserve_map("McLaughlin", ml_shp, ml_plots)
+qr_map <- make_reserve_map("Quail Ridge", qr_poly, qr_plots)
+ht_map <- make_reserve_map("Hastings", ht_shp, ht_plots)
+bc_map <- make_reserve_map("Big Creek", bc_shp, bc_plots)
+
+
+## step 5. arrange plots
+fig_s1 <- (ml_map + qr_map) / (ht_map + bc_map) +
+  plot_layout(widths = c(1, 1), heights = c(0.8, 0.8))
+
+ggsave(file = "figures/fig_s1.png", fig_s1,
+       width = 14, height = 10, dpi = 300)
+```
+
+##Fig S2
+
+Panel A
+```{r}
+figS2a_summary <- field_data %>% 
+  group_by(treatment, veg_category, year) %>% 
+  summarise(tick_density_mean = mean(tick_density), 
+            tick_density_se = sd(tick_density) / sqrt(n())) %>% 
+  mutate(veg_category = factor(veg_category,
+                               levels = c("Grassland",
+                                          "Scrub",
+                                          "Forest"),
+                               labels = c("Grassland",
+                                          "Shrubland",
+                                          "Forest")))
+
+figS2a <- figS2a_summary %>% 
+  mutate(reserve = as.factor(reserve,
+                          levels = c("McLaughlin", "Quail Ridge", "Hastings", "Big Creek"))) %>% 
+  ggplot(aes(x = veg_category, y = tick_density_mean, fill = treatment)) +
+  geom_bar(stat = "identity", position = "dodge", width = 0.7, color = "black") +
+  geom_errorbar(aes(ymin = tick_density_mean - tick_density_se,
+                    ymax = tick_density_mean + tick_density_se),
+                position = position_dodge(width = 0.7), width = 0.2) +
+  labs(x = NULL, y = expression(bold("Mean Tick Density per 100" ~ m^2)),
+                                fill = "Treatment", tag = "A") +
+         theme_classic(base_size = 16) +
+  scale_fill_manual(values = c("#f03b20", "#91bfdb")) +
+  theme(legend.position = "bottom",
+        legend.title = element_text(face = "bold", size = 16),
+        axis.text.x = element_text(face = "bold"),
+        plot.tag = element_text(face = "bold", size = 18),
+        strip.text = element_text(face = "bold"),
+        strip.background = element_rect(fill = "grey95")) +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.1)), limits = c(0, NA)) +
+  facet_wrap(~year, scales = "free_y")
+```
+
+Panel B
+```{r}
+figS2b_summary <- field_data %>% 
+  group_by(treatment, veg_category, reserve) %>% 
+  summarise(tick_density_mean = mean(tick_density), 
+            tick_density_se = sd(tick_density) / sqrt(n())) %>% 
+  mutate(veg_category = factor(veg_category,
+                               levels = c("Grassland",
+                                          "Scrub",
+                                          "Forest"),
+                               labels = c("Grassland",
+                                          "Shrubland",
+                                          "Forest")))
+
+
+figS2b <- figS2b_summary %>% 
+  mutate(reserve = factor(reserve,
+                          levels = c("McLaughlin", "Quail Ridge", "Hastings", "Big Creek"))) %>% 
+  ggplot(aes(x = veg_category, y = tick_density_mean, fill = treatment)) +
+  geom_bar(stat = "identity", position = "dodge", width = 0.7, color = "black") +
+  geom_errorbar(aes(ymin = tick_density_mean - tick_density_se,
+                    ymax = tick_density_mean + tick_density_se),
+                position = position_dodge(width = 0.7), width = 0.2) +
+  labs(x = NULL, y = expression(bold("Mean Tick Density per 100" ~ m^2)),
+                                fill = "Treatment", tag = "B") +
+         theme_classic(base_size = 16) +
+  scale_fill_manual(values = c("#f03b20", "#91bfdb")) +
+  theme(legend.position = "bottom",
+        legend.title = element_text(face = "bold", size = 16),
+        axis.text.x = element_text(face = "bold"),
+        plot.tag = element_text(face = "bold", size = 18),
+        strip.text = element_text(face = "bold"),
+        strip.background = element_rect(fill = "grey95")) +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.1)), limits = c(0, NA)) +
+  facet_wrap(~reserve, scales = "free_y")
+```
+
+
+Combine
+```{r}
+figS2 <- ggarrange(figS2a +
+            theme(legend.background = element_blank(),
+                  legend.box.background = element_blank(), 
+                  legend.key = element_blank()),
+          figS2b +
+            theme(legend.background = element_blank(),
+                  legend.box.background = element_blank(), 
+                  legend.key = element_blank()), 
+          ncol = 1,
+          common.legend = TRUE, legend = "bottom",
+          heights = c(.40, .60)) + theme(plot.margin = margin(0, 0, 0, 0))
+
+
+ggsave(file = "figures/fig_s2.png", figS2,
+       width = 14, height = 12, dpi = 300,
+       bg = "transparent")
+```
+
+
+##Fig S3
+```{r}
+## step 1. upload data
+distance <- read.csv("data/landscape_disttofire_20250715.csv") %>% dplyr::select(-X) %>% 
+  mutate(treatment = case_when(grepl("UNBURN", plot_name) ~ "Burn",
+         TRUE ~ "Unburn"))
+
+## step 2. plot
+figS3 <- distance %>% 
+  mutate(reserve = factor(reserve,
+                          levels = c("Big Creek", "Hastings", "McLaughlin", "Quail Ridge"),
+                          labels = c("BC", "HT", "ML", "QR"))) %>% 
+  ggplot(aes(x = reserve, y = distance_to_perim), fill = reserve) +
+  geom_boxplot(aes(fill = reserve)) +
+  geom_jitter(width = .1, alpha = .5) +
+  scale_fill_viridis_d(direction = -1) +
+  labs(x = NULL, y = "Distance from plot\n to fire perimeter (m)") +
+  theme_bw()+
+  theme(axis.title = element_text(face = "bold", size = 14),
+        axis.text = element_text(face = "bold", size = 12),
+        plot.margin = margin(5, 5, 5, 5),
+        strip.text = element_text(face = "bold", size = 14)) +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.1)), limits = c(0, NA)) +
+  facet_wrap(~treatment) +
+  guides(fill = FALSE)
+
+ggsave(figS3, file = "figures/fig_s3.png", width = 7, height = 5, dpi = 600)
+```
+
+##Fig S4
+
+Panel A
+```{r}
+## step 1. upload data
+prism <- read.csv("data/landscape_prism_20250715.csv") %>% dplyr::select(-X)
+
+## step 2. plot
+figS4a <- prism %>% 
+  mutate(reserve = factor(reserve,
+                          levels = c("Big Creek", "Hastings", "McLaughlin", "Quail Ridge"),
+                          labels = c("BC", "HT", "ML", "QR"))) %>% 
+  ggplot(aes(x = reserve, y = tmean_normal)) +
+  geom_jitter(alpha = .3, width = .2) +
+  geom_boxplot(aes(fill = reserve)) +
+  scale_fill_viridis_d(direction = -1) +
+  labs(x = NULL, y = "Mean Temperature (°C)", tag = "A") +
+  theme_bw(base_size = 16) +
+  theme(legend.position = "bottom",
+        legend.title = element_text(face = "bold", size = 16),
+        axis.text.x = element_text(face = "bold"),
+        axis.title.y = element_text(face = "bold"),
+        plot.tag = element_text(face = "bold", size = 18),
+        strip.text = element_text(face = "bold"),
+        strip.background = element_rect(fill = "grey95")) +
+  guides(fill = FALSE)
+  
+```
+
+Panel B
+```{r}
+figS4b <- prism %>% 
+  mutate(reserve = factor(reserve,
+                          levels = c("Big Creek", "Hastings", "McLaughlin", "Quail Ridge"),
+                          labels = c("BC", "HT", "ML", "QR"))) %>% 
+  ggplot(aes(x = reserve, y = vpd_mean_normal)) +
+  geom_jitter(alpha = .3, width = .2) +
+  geom_boxplot(aes(fill = reserve)) +
+  scale_fill_viridis_d(direction = -1) +
+  labs(x = NULL, y = "Mean VPD (kPA)", tag = "B") +
+  theme_bw(base_size = 16) +
+  theme(legend.position = "bottom",
+        legend.title = element_text(face = "bold", size = 16),
+        axis.text.x = element_text(face = "bold"),
+        axis.title.y = element_text(face = "bold"),
+        plot.tag = element_text(face = "bold", size = 18),
+        strip.text = element_text(face = "bold"),
+        strip.background = element_rect(fill = "grey95")) +
+  guides(fill = FALSE)
+```
+
+Panel C
+```{r}
+figS4c <- prism %>% 
+  mutate(reserve = factor(reserve,
+                          levels = c("Big Creek", "Hastings", "McLaughlin", "Quail Ridge"),
+                          labels = c("BC", "HT", "ML", "QR"))) %>% 
+  pivot_longer(cols = c("ppt_meanpost.firewinter_1":"ppt_meanpre.firewinter"),
+               names_to = "season",
+               values_to = "ppt_mm") %>% 
+  mutate(reserve = factor(reserve,
+                          labels = c("BC", "HT", "ML", "QR")),
+         season = factor(season,
+                         levels = c("ppt_meanpre.firewinter","ppt_meanpost.firewinter_1", "ppt_meanpost.firewinter_2"),
+                         labels = c("2020", "2021", "2022"))) %>% 
+  ggplot(aes(x = reserve, y = ppt_mm)) +
+  geom_jitter(alpha = .3, width = .2) +
+  geom_boxplot(aes(fill = reserve)) +
+  scale_fill_viridis_d(direction = -1) +
+  labs(x = NULL, y = "Winter Cum. Precip. (mm)", tag = "C") +
+  theme_bw(base_size = 16) +
+  theme(legend.position = "bottom",
+        legend.title = element_text(face = "bold", size = 16),
+        axis.text.x = element_text(face = "bold"),
+        axis.title.y = element_text(face = "bold"),
+        plot.tag = element_text(face = "bold", size = 18),
+        strip.text = element_text(face = "bold"),
+        strip.background = element_rect(fill = "grey95")) +
+  guides(fill = FALSE) +
+  facet_wrap(~season)
+
+```
+
+Combine them
+```{r}
+## keep separate for now because it's easier to arrange
+figs4ab <- ggarrange(figS4a, figS4b, align = "hv")
+ggsave(figs4ab, file = "figures/fig_s4ab.png", width = 7, height = 4, dpi = 600)
+
+ggsave(figS4c, file = "figures/fig_s4c.png", width = 7, height = 4, dpi = 600)
+```
+
+##Fig S5
+
+```{r}
+## step 1. upload data
+ndvi <- read.csv("data/landscape_ndvi_20250715.csv") %>% dplyr::select(-X)
+
+## step 2.format data
+figS5_summary <- ndvi %>% 
+  filter(treatment == "Burn" & year == 2020) %>% 
+  group_by(reserve, veg_category) %>% 
+  summarise(ndvi_basemedian = median(NDVI, na.rm = TRUE)) %>% 
+  mutate(veg_category = factor(veg_category,
+                               levels = c("Grassland",
+                                          "Scrub",
+                                          "Forest"),
+                               labels = c("Grassland",
+                                          "Shrubland",
+                                          "Forest"))) 
+
+
+## step 3. plot it
+figS5 <- ndvi %>% 
+  filter(treatment == "Burn") %>%   
+  mutate(veg_category = factor(veg_category,
+                               levels = c("Grassland",
+                                          "Scrub",
+                                          "Forest"),
+                               labels = c("Grassland",
+                                          "Shrubland",
+                                          "Forest"))) %>% 
+  ggplot(aes(x = factor(year), y = NDVI)) +
+  geom_hline(data = fig_s4_summary, aes(yintercept = ndvi_basemedian),
+             color = "#f03b20", linetype = "dashed") +
+  geom_boxplot(width = .5, aes(fill = reserve)) +
+  scale_fill_viridis_d(direction = -1) +
+  labs(x = NULL, y = "NDVI") +
+  theme_bw(base_size = 16) +
+  theme(
+        axis.text.x = element_text(face = "bold"),
+        axis.title.y = element_text(face = "bold"),
+        strip.text = element_text(face = "bold"),
+        strip.background = element_rect(fill = "grey95")) +
+  guides(fill = FALSE) +
+  facet_grid(veg_category ~ reserve)
+
+ggsave(figS5, file = "figures/fig_s5.png", width = 7, height = 5, dpi = 600)
+```
