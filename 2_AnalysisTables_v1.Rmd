@@ -1,0 +1,382 @@
+---
+title: "UCNRS Wildfire Analysis"
+output: html_document
+date: "2025-07-17"
+---
+
+#Journal
+Journal of Applied Ecology 
+
+#Title
+Wildfire disturbance and ecological cascades: teasing apart the direct and indirect effects of fire on tick populations
+
+#Corresponding Author
+Samantha Sambado (she/her) - sbsambado@ucsb.edu or ssambado@stanford.edu
+
+
+##Code to recreate analysis & tables in main text
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+## upload necessary packages
+library(tidyverse)
+library(piecewiseSEM)
+
+## upload necessary data
+# plot level data
+field_data <- read.csv("data/fieldmeasurements_20250715.csv") %>% dplyr::select(-X)
+
+# landscape level data
+reserve_climate <- read.csv("data/landscape_prism_20250715.csv") %>% dplyr::select(-c(X, vpd_min_normal, vpd_max_normal))
+reserve_distburn <- read.csv("data/landscape_disttofire_20250715.csv") %>% dplyr::select(-X)
+reserve_percburned <- read.csv("data/landscape_percentburned_20250715.csv") 
+
+# sem data
+sem_data <- read.csv("data/sem_covariates_20250715.csv") %>% dplyr::select(-X) 
+
+
+# wilcoxon data
+ndvi <- read.csv("data/landscape_ndvi_20250715.csv") %>% dplyr::select(-X) 
+nbr <- read.csv("data/landscape_nbr_20250715.csv") %>% dplyr::select(-X) 
+
+```
+
+#Analysis
+
+##Summary - Ticks
+
+```{r}
+## total ticks
+sum(field_data$tick_count)
+
+## tick density by treatment
+field_data %>% 
+  group_by(treatment) %>% 
+  summarise(tick_density_mean = round(mean(tick_density),2), 
+            tick_density_se = round(sd(tick_density) / sqrt(n()),1)) 
+
+## tick density by veg
+field_data %>% 
+  group_by(veg_category,treatment) %>% 
+  filter(treatment == "Burn") %>%
+  #filter(treatment != "Burn") %>% 
+  summarise(tick_density_mean = round(mean(tick_density),2), 
+            tick_density_se = round(sd(tick_density) / sqrt(n()),1)) 
+
+## tick density by year
+field_data %>% 
+  group_by(year,treatment) %>% 
+  filter(treatment == "Burn") %>%
+  #filter(treatment != "Burn") %>% 
+  summarise(tick_density_mean = round(mean(tick_density),2), 
+            tick_density_se = round(sd(tick_density) / sqrt(n()),1)) 
+
+```
+
+
+##Wilcoxon rank sum - Ticks
+```{r}
+## between burn and unburned plots
+ticks_burn <- field_data %>% filter(treatment == "Burn" & year == 2022) 
+
+ticks_unburn <- field_data %>% filter(treatment == "Unburn"& year == 2022)
+
+wilcox.test(ticks_burn$tick_density, ticks_unburn$tick_density)
+# 2022 : W = 2432, p-value = 8.585e-05
+
+
+## between vegetation types 
+# grassland
+ticks_burn_g <- field_data %>% filter(treatment == "Burn" & year == 2022 & veg_category == "Grassland") 
+
+ticks_unburn_g <- field_data %>% filter(treatment == "Unburn"& year == 2022 & veg_category == "Grassland")
+
+wilcox.test(ticks_burn_g$tick_density, ticks_unburn_g$tick_density)
+# W = 380, p-value = 0.6997
+
+# shrub
+ticks_burn_s <- field_data %>% filter(treatment == "Burn" & year == 2022 & veg_category == "Scrub") 
+
+ticks_unburn_s <- field_data %>% filter(treatment == "Unburn"& year == 2022 & veg_category == "Scrub")
+
+wilcox.test(ticks_burn_s$tick_density, ticks_unburn_s$tick_density)
+# W = 189.5, p-value = 0.02164
+
+# forest
+ticks_burn_f <- field_data %>% filter(treatment == "Burn" & year == 2022 & veg_category == "Forest") 
+
+ticks_unburn_f <- field_data %>% filter(treatment == "Unburn"& year == 2022 & veg_category == "Forest")
+
+wilcox.test(ticks_burn_f$tick_density, ticks_unburn_f$tick_density)
+# W = 246, p-value = 0.0002037
+```
+
+##Wildfire characteristics at reserve level
+```{r}
+## % burned
+reserve_percburned %>% 
+  group_by(reserve) %>% 
+  summarise(reserve_percentburn = round(reserve_percentburn,2))
+
+
+## dist from plots to perimeter
+reserve_distburn %>% 
+  mutate(treatment = case_when(grepl("UNBURN", plot_name) ~ "Burn",
+                               TRUE ~ "Unburn")) %>% 
+  filter(treatment == "Burn") %>%
+  #filter(treatment == "Unburn") %>% 
+  group_by(reserve) %>% 
+  summarise(dist_to_perim_mean = round(mean(distance_to_perim,na.rm = TRUE),2),
+            dist_to_perim_se = round(sd(distance_to_perim) / sqrt(n()),1))
+```
+
+##SEM
+(check this section)
+Inclusive model 
+```{r}
+mod_inclusive <- psem(
+  # local model
+  lm(log(tick_density+1) ~ 
+       soil_surface_severity_mean +
+       woody_debris_mean + 
+       reserve_percentburn + distance_to_perim +
+       tmean_normal + ppt_mean_overall,
+     data = sem_data),
+  
+  lmer(woody_debris_mean ~ 
+         soil_surface_severity_mean +
+         ppt_mean_overall + tmean_normal + 
+         reserve_percentburn + distance_to_perim + (1|veg_category), data = sem_data),
+
+  
+  lm(soil_surface_severity_mean ~ 
+       reserve_percentburn +  distance_to_perim  +
+       ppt_mean_overall + tmean_normal, data = sem_data),
+  
+  lm(reserve_percentburn ~ 
+       ppt_mean_overall + tmean_normal, data = sem_data)
+)  
+
+summary(mod_inclusive)
+plot(mod_inclusive)
+
+```
+
+Plot-level model
+```{r}
+mod_plot <- psem(
+  # local model
+  lmer(log(tick_density+1) ~ 
+       soil_surface_severity_mean +
+       woody_debris_mean + bare_soil_char_mean + (1|reserve),
+     data = sem_data),
+  
+  lmer(woody_debris_mean ~ 
+         soil_surface_severity_mean + 
+         (1|reserve), data = sem_data),
+
+  
+  lmer(bare_soil_char_mean ~ 
+       soil_surface_severity_mean + 
+         (1|reserve), data = sem_data))  
+
+summary(mod_plot)
+plot(mod_plot)
+```
+
+Landscape-level model
+```{r}
+mod_landscape <- psem(
+  lmer(log(tick_density+1) ~ 
+       reserve_percentburn + distance_to_perim +
+       tmean_normal + ppt_mean_overall + (1|treatment),
+     data = sem_data),
+  
+  lm(reserve_percentburn ~ 
+       ppt_mean_overall + tmean_normal, data = sem_data)
+)  
+
+summary(mod_landscape)
+plot(mod_landscape)
+```
+
+##Wilcoxon paired - Vegetation
+```{r}
+## only select burn data
+ndvi_burn <- ndvi %>% filter(treatment == "Burn")
+
+
+## ML
+ndvi_burn_2020_ml <- ndvi_burn %>% filter(year == 2020 & reserve == "McLaughlin")
+ndvi_burn_2021_ml <- ndvi_burn %>% filter(year == 2021 & reserve == "McLaughlin")
+ndvi_burn_2022_ml <- ndvi_burn %>% filter(year == 2022 & reserve == "McLaughlin")
+
+wilcox.test(ndvi_burn_2021_ml$NDVI, ndvi_burn_2020_ml$NDVI,  paired = TRUE)
+# V = 19, p-value = 0.4316
+# NEW V = 19, p-value = 0.4316
+
+wilcox.test(ndvi_burn_2022_ml$NDVI, ndvi_burn_2020_ml$NDVI, paired = TRUE)
+# V = 15, p-value = 0.2324
+# NEW V = 32, p-value = 0.6953 (changed)
+
+## QR
+ndvi_burn_2020_qr <- ndvi_burn %>% filter(year == 2020 & reserve == "Quail Ridge")
+ndvi_burn_2021_qr <- ndvi_burn %>% filter(year == 2021 & reserve == "Quail Ridge")
+ndvi_burn_2022_qr <- ndvi_burn %>% filter(year == 2022 & reserve == "Quail Ridge")
+
+wilcox.test(ndvi_burn_2021_qr$NDVI,ndvi_burn_2020_qr$NDVI, paired = TRUE)
+# V = 0, p-value = 6.104e-05
+
+wilcox.test(ndvi_burn_2022_qr$NDVI,ndvi_burn_2020_qr$NDVI,  paired = TRUE)
+# V = 1, p-value = 0.0001221
+# NEW V = 5, p-value = 0.0006104 (changed)
+
+## HT
+ndvi_burn_2020_ht <- ndvi_burn %>% filter(year == 2020 & reserve == "Hastings")
+ndvi_burn_2021_ht <- ndvi_burn %>% filter(year == 2021 & reserve == "Hastings")
+ndvi_burn_2022_ht <- ndvi_burn %>% filter(year == 2022 & reserve == "Hastings")
+
+wilcox.test(ndvi_burn_2021_ht$NDVI, ndvi_burn_2020_ht$NDVI,  paired = TRUE)
+# V = 20, p-value = 0.02155
+# NEW V = 8, p-value = 0.001526 (changed)
+
+wilcox.test(ndvi_burn_2022_ht$NDVI, ndvi_burn_2020_ht$NDVI, paired = TRUE)
+# V = 34, p-value = 0.1514
+# V = 1, p-value = 0.0001221 (changed)
+
+## BC
+ndvi_burn_2020_bc <- ndvi_burn %>% filter(year == 2020 & reserve == "Big Creek")
+ndvi_burn_2021_bc <- ndvi_burn %>% filter(year == 2021 & reserve == "Big Creek")
+ndvi_burn_2022_bc <- ndvi_burn %>% filter(year == 2022 & reserve == "Big Creek")
+
+wilcox.test(ndvi_burn_2021_bc$NDVI,ndvi_burn_2020_bc$NDVI, paired = TRUE)
+# V = 9, p-value = 0.002014
+# NEW V = 0, p-value = 0.0007247 (changed)
+
+wilcox.test(ndvi_burn_2022_bc$NDVI,ndvi_burn_2020_bc$NDVI,  paired = TRUE)
+# V = 6, p-value = 0.0008545
+# NEW V = 0, p-value = 0.0007247 (changed)
+```
+
+NBR
+```{r}
+## only select burn data
+nbr_burn <- nbr %>% filter(treatment == "Burn")
+
+
+## ML
+nbr_ml <- nbr_burn %>% filter(reserve == "McLaughlin")
+wilcox.test(nbr_ml$post_NBR, nbr_ml$pre_NBR,  paired = TRUE, conf.int = TRUE)
+# V = 0, p-value = 0.001953
+
+## QR
+nbr_qr <- nbr_burn %>% filter(reserve == "Quail Ridge")
+wilcox.test(nbr_qr$post_NBR, nbr_qr$pre_NBR,  paired = TRUE, conf.int = TRUE)
+# V = 0, p-value = 6.104e-05
+
+## HT
+nbr_ht <- nbr_burn %>% filter(reserve == "Hastings")
+wilcox.test(nbr_ht$post_NBR, nbr_ht$pre_NBR,  paired = TRUE, conf.int = TRUE)
+# V = 0, p-value = 6.104e-05
+
+## BC
+nbr_bc <- nbr_burn %>% filter(reserve == "Big Creek")
+wilcox.test(nbr_bc$post_NBR, nbr_bc$pre_NBR,  paired = TRUE, conf.int = TRUE)
+# V = 0, p-value = 0.0006653
+
+
+```
+#Tables
+
+
+##Table 1. 
+```{r}
+
+## climate
+
+## % burned
+reserve_percburned %>% 
+  group_by(reserve) %>% 
+  summarise(reserve_percentburn = round(reserve_percentburn,2))
+
+## mean tick density and se
+field_data %>% 
+  group_by(reserve, treatment) %>% 
+  filter(treatment != "Burn") %>% 
+  #filter(treatment == "Burn") %>%
+    summarise(tick_density_mean = round(mean(tick_density),2), 
+            tick_density_se = round(sd(tick_density) / sqrt(n()),1)) 
+```
+
+##Table 2
+```{r}
+field_data %>% 
+  group_by(reserve, veg_category, treatment) %>% 
+  filter(treatment == "Burn") %>%
+  #filter(treatment != "Burn") %>%
+    summarise(tick_density_mean = round(mean(tick_density),1), 
+            tick_density_se = round(sd(tick_density) / sqrt(n()),1)) 
+```
+
+##Table 3
+```{r}
+## only select burn data
+ndvi_burn <- ndvi %>% filter(treatment == "Burn")
+
+
+## ML
+ndvi_burn_2020_ml <- ndvi_burn %>% filter(year == 2020 & reserve == "McLaughlin")
+ndvi_burn_2021_ml <- ndvi_burn %>% filter(year == 2021 & reserve == "McLaughlin")
+ndvi_burn_2022_ml <- ndvi_burn %>% filter(year == 2022 & reserve == "McLaughlin")
+
+
+wilcox.test(ndvi_burn_2021_ml$NDVI, ndvi_burn_2020_ml$NDVI,  paired = TRUE)
+# V = 19, p-value = 0.4316
+# NEW
+wilcox.test(ndvi_burn_2022_ml$NDVI, ndvi_burn_2020_ml$NDVI, paired = TRUE)
+# V = 15, p-value = 0.2324
+# NEW
+
+## QR
+ndvi_burn_2020_qr <- ndvi_burn %>% filter(year == 2020 & reserve == "Quail Ridge")
+ndvi_burn_2021_qr <- ndvi_burn %>% filter(year == 2021 & reserve == "Quail Ridge")
+ndvi_burn_2022_qr <- ndvi_burn %>% filter(year == 2022 & reserve == "Quail Ridge")
+
+wilcox.test(ndvi_burn_2021_qr$NDVI,ndvi_burn_2020_qr$NDVI, paired = TRUE)
+# V = 0, p-value = 6.104e-05
+# NEW
+wilcox.test(ndvi_burn_2022_qr$NDVI,ndvi_burn_2020_qr$NDVI,  paired = TRUE)
+# V = 1, p-value = 0.0001221
+# NEW
+
+## HT
+ndvi_burn_2020_ht <- ndvi_burn %>% filter(year == 2020 & reserve == "Hastings")
+ndvi_burn_2021_ht <- ndvi_burn %>% filter(year == 2021 & reserve == "Hastings")
+ndvi_burn_2022_ht <- ndvi_burn %>% filter(year == 2022 & reserve == "Hastings")
+
+wilcox.test(ndvi_burn_2021_ht$NDVI, ndvi_burn_2020_ht$NDVI,  paired = TRUE)
+# V = 20, p-value = 0.02155
+# NEW
+
+wilcox.test(ndvi_burn_2022_ht$NDVI, ndvi_burn_2020_ht$NDVI, paired = TRUE)
+# V = 34, p-value = 0.1514
+# NEW
+
+
+## BC
+ndvi_burn_2020_bc <- ndvi_burn %>% filter(year == 2020 & reserve == "Big Creek")
+ndvi_burn_2021_bc <- ndvi_burn %>% filter(year == 2021 & reserve == "Big Creek")
+ndvi_burn_2022_bc <- ndvi_burn %>% filter(year == 2022 & reserve == "Big Creek")
+
+wilcox.test(ndvi_burn_2021_bc$NDVI,ndvi_burn_2020_bc$NDVI, paired = TRUE)
+# V = 9, p-value = 0.002014
+# NEW
+
+wilcox.test(ndvi_burn_2022_bc$NDVI,ndvi_burn_2020_bc$NDVI,  paired = TRUE)
+# V = 6, p-value = 0.0008545
+# NEW
+
+
+```
